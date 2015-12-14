@@ -1,0 +1,13 @@
+#graphviz 
+#ipython
+#kaggle-cli
+numpy
+#matplotlib
+#pandas
+#Pillow
+#pymongo
+#requests
+#scikit-learn
+#scipy
+Theano
+#virtualenv
