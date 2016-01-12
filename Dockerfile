@@ -80,9 +80,8 @@ RUN pip install -r /requirements.txt
 # Finally clean up any side affects from apt-get
 RUN apt-get clean && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
-VOLUME /notebooks
-VOLUME /data
-WORKDIR /notebooks
+VOLUME /src
+WORKDIR /src
 
 EXPOSE 8888
 
