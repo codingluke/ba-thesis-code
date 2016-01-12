@@ -2,8 +2,44 @@ import unittest
 import numpy as np
 import PIL.Image
 import pdb
+import os
+from timeit import default_timer as timer
 
-from src.preprocessor import ImgPreprocessor
+from src.preprocessor import ImgPreprocessor, BatchImgProcessor
+from src.load_data import DataIter
+
+class TestBatchImgProcessor(unittest.TestCase):
+
+  def setUp(self):
+    self.batch_processor = BatchImgProcessor(X_dirpath='../data/train/*',
+                                        y_dirpath='../data/train_cleaned/',
+                                        batchsize=1000000,
+                                        border=3,
+                                        limit=None,
+                                        train_size=0.8)
+
+  def test_iter2(self):
+    # start = timer()
+    # data = DataIter(x_path='../preparation/tryone/data/dump/b3b3_c1000000_l144_*_x*',
+                           # y_path='../preparation/tryone/data/dump/b3b3_c1000000_l144_*_y*')
+    # i = 0
+    # for train_x, train_y in data:
+      # i += 1
+    # end = timer()
+    # print end - start
+    # print i
+    pass
+
+  def test_iteration(self):
+    print len(self.batch_processor)
+    # start = timer()
+    # i = 0
+    # for ds in self.batch_processor:
+      # i += 1
+    # end = timer()
+    # print end - start
+    # print i
+    pass
 
 class TestPreprocessor(unittest.TestCase):
 
@@ -62,3 +98,16 @@ class TestPreprocessor(unittest.TestCase):
     second_last_pixel = img_array[-2]
     second_last_center_pixel = X[-1][center_index - 1]
     self.assertEqual(second_last_center_pixel, second_last_pixel)
+
+  def test_y_pixels(self):
+    name = os.path.basename(self.preprocessor.X_imgpath)
+    y_imgpath = os.path.join(self.preprocessor.y_dirpath, name)
+    img_array = np.array(PIL.Image.open(y_imgpath)).flatten() / 255.
+    border = 1
+    self.preprocessor.border = border
+    X, y = zip(*self.preprocessor.get_dataset())
+    self.assertEqual(y[0], img_array[0])
+    self.assertEqual(y[len(y) / 2], img_array[len(y) / 2])
+    self.assertEqual(y[-1], img_array[-1])
+
+
