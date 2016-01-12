@@ -104,3 +104,5 @@ Session.vim
 pyvenv.cfg
 pip-selfcheck.json
 venv/
+
+upload_data.sh
