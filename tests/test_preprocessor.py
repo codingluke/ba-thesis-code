@@ -15,7 +15,7 @@ class TestBatchImgProcessor(unittest.TestCase):
         X_dirpath='./tests/data/train/*',
         y_dirpath='./tests/data/test/',
         batchsize=100,
-        border=3,
+        border=1,
         limit=None,
         train_stepover=8)
 
@@ -62,11 +62,14 @@ class TestBatchImgProcessor(unittest.TestCase):
 class TestPreprocessor(unittest.TestCase):
 
   def setUp(self):
-    self.preprocessor = ImgPreprocessor(X_imgpath='./tests/data/train/gradient.png',
-                                        y_dirpath='./tests/data/test/',
-                                        border=3,
-                                        modus='full',
-                                        train_stepover=8)
+    self.preprocessor = ImgPreprocessor(
+        X_imgpath='./tests/data/train/noise.png',
+        y_dirpath='./tests/data/test/',
+        # X_imgpath='../data/train/12.png',
+        # y_dirpath='../data/train_cleaned/',
+        border=1,
+        modus='full',
+        train_stepover=8)
 
   def test_patchsize_according_bordersize(self):
     # The patch has to have (2*border+1)**2 pixels
@@ -86,14 +89,13 @@ class TestPreprocessor(unittest.TestCase):
     train_set = self.preprocessor.get_dataset()
     self.preprocessor.modus = 'valid'
     valid_set = self.preprocessor.get_dataset()
-
-    eq = False
+    count = 0
     for Xv, yv in valid_set:
       for Xt, yt in train_set:
         eq = np.array_equal(Xv, Xt)
-        if eq: break
+        if eq: count += 1; break
       if eq: break
-    self.assertEqual(eq, False)
+    self.assertEqual(count, 0)
 
   def test_patches_amounth(self):
     shape = np.array(PIL.Image.open(self.preprocessor.X_imgpath)).shape

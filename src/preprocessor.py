@@ -74,9 +74,7 @@ class BatchImgProcessor(object):
         """Gives back the next file data as numpy array. Raise StopIteration
         at the end, so it can be used as iterator."""
         if self.i > len(self):
-            self.i = 0
-            self.i_preprocessor = 0
-            self.buffer = []
+            self.reset()
             if self.random:
                 np.random.shuffle(self.preprocessors)
             raise StopIteration
@@ -116,18 +114,11 @@ class ImgPreprocessor(object):
         if self.modus == 'full':
             return h * w
         elif self.modus == 'train':
-            # a = h / self.stepover
-            # b = w / self.stepover
-            # valid_lenght = (a * w) + (b * h) - (a + b)
-            # return (h * w) - valid_lenght
             x, y = self._get_range((h,w))
             lenx = len([i for i in x])
             leny = len([i for i in y])
             return (lenx * leny)
         elif self.modus == 'valid':
-            # a = h / self.stepover
-            # b = w / self.stepover
-            # return (a * w) + (b * h) - (a * b)
             x, y = self._get_range((h,w))
             lenx = len([i for i in x])
             leny = len([i for i in y])
