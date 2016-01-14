@@ -6,8 +6,10 @@ import PIL.Image
 import PIL.ImageOps
 import sys
 import glob
-from itertools import izip
 import pdb
+
+from itertools import izip
+from numpy.lib.stride_tricks import as_strided as ast
 
 np.random.seed(seed=59842093)
 
@@ -109,14 +111,26 @@ class ImgPreprocessor(object):
         self.stepover = train_stepover
 
     def get_dataset(self, modus=None):
-        return zip(self._get_X(modus=modus), self._get_y(modus=modus))
+        # return zip(self._get_X(modus=modus), self._get_y(modus=modus))
+        return zip(self._get_X_fast(modus=modus),
+                   self._get_y_fast(modus=modus))
 
     def length(self, modus=None):
-        h, w = np.array(self.X_img).shape
+        pixels = self.X_img.size[0] * self.X_img.size[1]
         if modus == None or modus == 'full':
-            return h * w
+            return pixels
         else:
-            x, y = self._get_range((h,w), modus=modus)
+            if modus == 'train':
+                return pixels * 0.8
+            if modus == 'valid':
+                return pixels * (1 - 0.8)
+
+    def length_slow(self, modus=None):
+        pixels = self.X_img.size[0] * self.X_img.size[1]
+        if modus == None or modus == 'full':
+            return pixels
+        else:
+            x, y = self._get_range(self.X_img.size, modus=modus)
             lenx = len([i for i in x])
             leny = len([i for i in y])
             return (lenx * leny)
@@ -135,6 +149,17 @@ class ImgPreprocessor(object):
                 for x in height_range
                 for y in width_range])
 
+    def _get_y_fast(self, modus=None):
+        ary = np.array(self.y_img) / 255.
+        pixels = self.X_img.size[0] * self.X_img.size[1]
+        patches = ary.flatten().reshape(pixels, 1)
+        if modus == None or modus == 'full':
+            return patches
+        if modus == 'train':
+            return patches[:pixels*0.8]
+        if modus == 'valid':
+            return patches[pixels*0.8:]
+
     def _get_X(self, modus=None):
         """Return an array of patch-images for each pixel of the image.
         The size of each patch is (self.border + 1, self.border + 1).
@@ -151,6 +176,21 @@ class ImgPreprocessor(object):
         return np.asarray([ext[x-b:x+b+1, y-b:y+b+1].flatten()
                 for x in height_range
                 for y in width_range])
+
+    def _get_X_fast(self, modus=None):
+        b = self.border
+        ext = np.asarray(PIL.ImageOps.expand(self.X_img, border=b, fill=0))
+        pixels = self.X_img.size[0] * self.X_img.size[1]
+        ext = ext / 255.
+        size = 2*b+1
+        patches = sliding_window(ext, (size, size),
+                                 (1, 1)).reshape(pixels, size**2)
+        if modus == None or modus == 'full':
+            return patches
+        if modus == 'train':
+            return patches[:pixels*0.8]
+        if modus == 'valid':
+            return patches[pixels*0.8:]
 
     def _get_range(self, shape, border=0, modus=None):
         height, width = shape
@@ -185,3 +225,84 @@ class TrainRange(object):
                (((self.act - 1) - self.start) % self.stepover) == 0:
                 self.act += 1
             return self.act - 1
+
+
+def sliding_window(a, ws, ss=None):
+    '''
+    Return a sliding window over a in any number of dimensions
+
+    Parameters:
+        a  - an n-dimensional numpy array
+        ws - an int (a is 1D) or tuple (a is 2D or greater) representing the size
+             of each dimension of the window
+        ss - an int (a is 1D) or tuple (a is 2D or greater) representing the
+             amount to slide the window in each dimension. If not specified, it
+             defaults to ws.
+
+    Returns
+        an array containing each n-dimensional window from a
+    '''
+
+    if None is ss:
+        # ss was not provided. the windows will not overlap in any direction.
+        ss = ws
+    ws = norm_shape(ws)
+    ss = norm_shape(ss)
+
+    # convert ws, ss, and a.shape to numpy arrays so that we can do math in every
+    # dimension at once.
+    ws = np.array(ws)
+    ss = np.array(ss)
+    shape = np.array(a.shape)
+
+
+    # ensure that ws, ss, and a.shape all have the same number of dimensions
+    ls = [len(shape),len(ws),len(ss)]
+    if 1 != len(set(ls)):
+        raise ValueError(\
+        'a.shape, ws and ss must all have the same length. They were %s' % str(ls))
+
+    # ensure that ws is smaller than a in every dimension
+    if np.any(ws > shape):
+        raise ValueError(\
+        'ws cannot be larger than a in any dimension.\
+ a.shape was %s and ws was %s' % (str(a.shape),str(ws)))
+
+    # how many slices will there be in each dimension?
+    newshape = norm_shape(((shape - ws) // ss) + 1)
+    # the shape of the strided array will be the number of slices in each dimension
+    # plus the shape of the window (tuple addition)
+    newshape += norm_shape(ws)
+    # the strides tuple will be the array's strides multiplied by step size, plus
+    # the array's strides (tuple addition)
+    newstrides = norm_shape(np.array(a.strides) * ss) + a.strides
+    strided = ast(a,shape = newshape, strides = newstrides)
+    return strided
+
+
+def norm_shape(shape):
+    '''
+    Normalize numpy array shapes so they're always expressed as a tuple,
+    even for one-dimensional shapes.
+
+    Parameters
+        shape - an int, or a tuple of ints
+
+    Returns
+        a shape tuple
+    '''
+    try:
+        i = int(shape)
+        return (i,)
+    except TypeError:
+        # shape was not a number
+        pass
+
+    try:
+        t = tuple(shape)
+        return t
+    except TypeError:
+        # shape was not iterable
+        pass
+
+    raise TypeError('shape must be an int, or a tuple of ints')
