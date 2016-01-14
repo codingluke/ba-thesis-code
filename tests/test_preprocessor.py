@@ -4,6 +4,7 @@ import PIL.Image
 import pdb
 import os
 from timeit import default_timer as timer
+from itertools import izip
 
 from src.preprocessor import ImgPreprocessor, BatchImgProcessor, TrainRange
 from src.load_data import DataIter
@@ -11,37 +12,43 @@ from src.load_data import DataIter
 class TestBatchImgProcessor(unittest.TestCase):
 
   def setUp(self):
-    self.batch_processor = BatchImgProcessor(
+    self.BatchProcessor = BatchImgProcessor.load(
         X_dirpath='./tests/data/train/*',
         y_dirpath='./tests/data/test/',
         batchsize=102,
         border=1,
         limit=None,
         train_stepover=8)
+    self.full_batch = self.BatchProcessor()
+    self.train_batch = self.BatchProcessor(modus='train')
+    self.valid_batch = self.BatchProcessor(modus='valid')
 
   def tearDown(self):
-    del self.batch_processor
+    del self.full_batch
+    del self.train_batch
+    del self.valid_batch
+    del self.BatchProcessor
 
   def test_len(self):
     # Pixels manually calculated according test images
-    pixels = 50*34*2 / self.batch_processor.batchsize
-    self.assertEqual(len(self.batch_processor), pixels)
+    pixels = 50*34*2 / self.full_batch.batchsize
+    self.assertEqual(len(self.full_batch), pixels)
 
   def test_consitency(self):
-    ds = self.batch_processor.next()
-    self.batch_processor.reset()
-    ds2 = self.batch_processor.next()
+    ds = self.full_batch.next()
+    self.full_batch.reset()
+    ds2 = self.full_batch.next()
     center_index = (len(ds[0][0]) - 1) / 2
     self.assertEqual(ds[0][0][center_index], ds2[0][0][center_index])
 
   def test_randomness(self):
-    self.batch_processor.random = True
-    ds = self.batch_processor.next()
-    self.batch_processor.reset()
-    ds2 = self.batch_processor.next()
-    center_index = (len(ds[0][0]) - 1) / 2
-    self.assertNotEqual(ds[0][0][center_index], ds2[0][0][center_index])
-    self.assertNotEqual(ds[-1][0][center_index], ds2[-1][0][center_index])
+    self.full_batch.random = True
+    X, y = self.full_batch.next()
+    self.full_batch.reset()
+    X2, y2 = self.full_batch.next()
+    center_index = (len(X[0]) - 1) / 2
+    self.assertNotEqual(X[0][center_index], X2[0][center_index])
+    self.assertNotEqual(X[-1][center_index], X2[-1][center_index])
 
   def test_train_range_intersec(self):
     valid_range = [x for x in xrange(3,258+6-3,8)]
@@ -58,9 +65,18 @@ class TestBatchImgProcessor(unittest.TestCase):
     self.assertEqual(len(intersec), 0)
     self.assertEqual(total_len, 258)
 
-  def test_batch_sizes(self):
-    for ds in self.batch_processor:
-      print len(ds)
+  def test_valid_train_difference(self):
+    count = 0
+    for Xvs, yvs in self.valid_batch:
+        for Xts, yts in self.train_batch:
+            for Xv in Xvs:
+                for Xt in Xts:
+                    eq = np.array_equal(Xv, Xt)
+                    if eq: count += 1; break
+                if eq: break
+            if eq: break
+        if eq: break
+    self.assertEqual(count, 0)
 
 class TestPreprocessor(unittest.TestCase):
 
@@ -68,10 +84,7 @@ class TestPreprocessor(unittest.TestCase):
     self.preprocessor = ImgPreprocessor(
         X_imgpath='./tests/data/train/noise.png',
         y_dirpath='./tests/data/test/',
-        # X_imgpath='../data/train/12.png',
-        # y_dirpath='../data/train_cleaned/',
         border=1,
-        modus='full',
         train_stepover=8)
 
   def test_patchsize_according_bordersize(self):
@@ -88,10 +101,8 @@ class TestPreprocessor(unittest.TestCase):
 
   def test_valid_train_difference(self):
     full_set = self.preprocessor.get_dataset()
-    self.preprocessor.modus = 'train'
-    train_set = self.preprocessor.get_dataset()
-    self.preprocessor.modus = 'valid'
-    valid_set = self.preprocessor.get_dataset()
+    train_set = self.preprocessor.get_dataset(modus='train')
+    valid_set = self.preprocessor.get_dataset(modus='valid')
     count = 0
     for Xv, yv in valid_set:
       for Xt, yt in train_set:
