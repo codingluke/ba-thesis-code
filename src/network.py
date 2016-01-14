@@ -129,12 +129,14 @@ class Network():
 
         # Prepare Theano shared variables with the shape and type of
         # The train, valid batches.
-        train_x_zeros, train_y_zeros = training_data.zeros()
+        train_x_zeros, train_y_zeros = training_data.next()
         training_x = tshared(train_x_zeros)
         training_y = tshared(train_y_zeros)
-        valid_x_zeros, valid_y_zeros = validation_data.zeros()
+        training_data.reset()
+        valid_x_zeros, valid_y_zeros = validation_data.next()
         validation_x = tshared(valid_x_zeros)
         validation_y = tshared(valid_y_zeros)
+        validation_data.reset()
 
         # compute number of minibatches for training, validation and testing
         num_training_batches = size(training_x) / mini_batch_size

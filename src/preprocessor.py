@@ -113,15 +113,10 @@ class ImgPreprocessor(object):
 
     def length(self, modus=None):
         h, w = np.array(self.X_img).shape
-        if not modus or modus == 'full':
+        if modus == None or modus == 'full':
             return h * w
-        elif modus == 'train':
-            x, y = self._get_range((h,w))
-            lenx = len([i for i in x])
-            leny = len([i for i in y])
-            return (lenx * leny)
-        elif modus == 'valid':
-            x, y = self._get_range((h,w))
+        else:
+            x, y = self._get_range((h,w), modus=modus)
             lenx = len([i for i in x])
             leny = len([i for i in y])
             return (lenx * leny)

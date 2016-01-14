@@ -65,6 +65,34 @@ class TestBatchImgProcessor(unittest.TestCase):
     self.assertEqual(len(intersec), 0)
     self.assertEqual(total_len, 258)
 
+  def test_batch_lengths(self):
+    validl = len(self.valid_batch)
+    validl2 = len([x for x in self.valid_batch])
+    self.assertEqual(validl, validl2)
+
+    trainl = len(self.train_batch)
+    trainl2 = len([x for x in self.train_batch])
+    self.assertEqual(trainl, trainl2)
+
+    fulll = len(self.full_batch)
+    fulll2 = len([x for x in self.full_batch])
+    self.assertEqual(fulll, fulll2)
+
+  def test_batch_sizes(self):
+    eq = True
+    for X, y in self.valid_batch:
+      eq = (X.shape[0] == self.BatchProcessor.batchsize)
+      if not eq: break
+    self.assertEqual(eq, True)
+
+    eq = True
+    for X, y in self.train_batch:
+      eq = (X.shape[0] == self.BatchProcessor.batchsize)
+      if not eq: break
+    self.assertEqual(eq, True)
+
+
+
   def test_valid_train_difference(self):
     count = 0
     for Xvs, yvs in self.valid_batch:

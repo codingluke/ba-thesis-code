@@ -5,11 +5,13 @@ import load_data as l
 import PIL.Image
 import cPickle
 import pdb
+import theano
 
 from network import Network, ConvPoolLayer, FullyConnectedLayer, \
                     tanh, ReLU
+from preprocessor import BatchImgProcessor
 
-#border = 4
+border = 3
 
 #training_data = (l.DataIter('./data/dump/b5_c500000_l50_train_x*'),
                  #l.DataIter('./data/dump/b5_c500000_l50_train_y*'))
@@ -21,10 +23,21 @@ from network import Network, ConvPoolLayer, FullyConnectedLayer, \
 #validation_data = l.DataIter(x_path='./data/dump/b5_c500000_l50_valid_x*',
                              #y_path='./data/dump/b5_c500000_l50_valid_y*')
 
-training_data = l.DataIter(x_path='./data/dump/b3b3_c1000000_l144_train_x*',
-                           y_path='./data/dump/b3b3_c1000000_l144_train_y*')
-validation_data = l.DataIter(x_path='./data/dump/b3b3_c1000000_l144_valid_x*',
-                             y_path='./data/dump/b3b3_c1000000_l144_valid_y*')
+# training_data = l.DataIter(x_path='./data/dump/b3b3_c1000000_l144_train_x*',
+                           # y_path='./data/dump/b3b3_c1000000_l144_train_y*')
+# validation_data = l.DataIter(x_path='./data/dump/b3b3_c1000000_l144_valid_x*',
+                             # y_path='./data/dump/b3b3_c1000000_l144_valid_y*')
+
+BatchProcessor = BatchImgProcessor.load(
+    X_dirpath='../../data/train/*',
+    y_dirpath='../../data/train_cleaned/',
+    batchsize=100000,
+    border=border,
+    limit=None,
+    train_stepover=8,
+    dtype=theano.config.floatX)
+training_data = BatchProcessor(modus='train', random=True)
+validation_data = BatchProcessor(modus='valid')
 
 #print training_data[0].files
 #n_in = 121
@@ -57,7 +70,7 @@ cPickle.dump(net, f)
 f = open('model_b3_l144.pkl', 'rb')
 net = cPickle.load(f)
 
-test_x = np.array(l.x_from_image('./data/test/1.png', border=5))
+test_x = np.array(l.x_from_image('../../data/test/1.png', border=border))
 y = net3.predict(test_x)
 y2 = np.vstack(np.array(y).flatten())
 orig = np.resize(y2, (258, 540)) * 255
@@ -65,7 +78,7 @@ img = PIL.Image.fromarray(orig)
 img.show()
 img.convert('L').save('1_cleaned.png', 'PNG')
 
-test_x = np.array(l.x_from_image('./data/test/4.png', border=3))
+test_x = np.array(l.x_from_image('../../data/test/4.png', border=border))
 y = net.predict(test_x)
 y2 = np.vstack(np.array(y).flatten())
 orig = np.resize(y2, (258, 540)) * 255
@@ -73,7 +86,7 @@ img = PIL.Image.fromarray(orig)
 img.show()
 img.convert('L').save('4_cleaned.png', 'PNG')
 
-test_x = np.array(l.x_from_image('./data/test/7.png', border=3))
+test_x = np.array(l.x_from_image('../../data/test/7.png', border=border))
 y = net.predict(test_x)
 y2 = np.vstack(np.array(y).flatten())
 orig = np.resize(y2, (258, 540)) * 255
@@ -81,7 +94,7 @@ img = PIL.Image.fromarray(orig)
 img.show()
 img.convert('L').save('7_cleaned.png', 'PNG')
 
-test_x = np.array(l.x_from_image('./data/test/10.png', border=3))
+test_x = np.array(l.x_from_image('../../data/test/10.png', border=border))
 y = net.predict(test_x)
 y2 = np.vstack(np.array(y).flatten())
 orig = np.resize(y2, (258, 540)) * 255
