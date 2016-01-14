@@ -14,7 +14,7 @@ class TestBatchImgProcessor(unittest.TestCase):
     self.batch_processor = BatchImgProcessor(
         X_dirpath='./tests/data/train/*',
         y_dirpath='./tests/data/test/',
-        batchsize=100,
+        batchsize=102,
         border=1,
         limit=None,
         train_stepover=8)
@@ -58,6 +58,9 @@ class TestBatchImgProcessor(unittest.TestCase):
     self.assertEqual(len(intersec), 0)
     self.assertEqual(total_len, 258)
 
+  def test_batch_sizes(self):
+    for ds in self.batch_processor:
+      print len(ds)
 
 class TestPreprocessor(unittest.TestCase):
 
@@ -102,6 +105,7 @@ class TestPreprocessor(unittest.TestCase):
     num_pixels = shape[0] * shape[1]
     num_entires = len(self.preprocessor.get_dataset())
     self.assertEqual(num_entires, num_pixels)
+
 
   def test_center_pixels(self):
     # Prepare test image

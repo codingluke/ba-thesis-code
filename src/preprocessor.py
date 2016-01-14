@@ -58,9 +58,7 @@ class BatchImgProcessor(object):
         buffer = rounding = 0
         for p in self.preprocessors:
             buffer += len(p)
-        if (buffer % self.batchsize) != 0:
-            rounding = 1
-        return (buffer / self.batchsize) + rounding
+        return (buffer / self.batchsize)
 
     def __iter__(self):
         return self
@@ -73,7 +71,7 @@ class BatchImgProcessor(object):
     def next(self):
         """Gives back the next file data as numpy array. Raise StopIteration
         at the end, so it can be used as iterator."""
-        if self.i > len(self):
+        if self.i > len(self) - 1:
             self.reset()
             if self.random:
                 np.random.shuffle(self.preprocessors)
