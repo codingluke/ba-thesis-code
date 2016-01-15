@@ -8,6 +8,7 @@ from itertools import izip
 
 from src.preprocessor import ImgPreprocessor, BatchImgProcessor, TrainRange
 from src.load_data import DataIter
+import config
 
 class TestBatchImgProcessor(unittest.TestCase):
 
@@ -29,23 +30,14 @@ class TestBatchImgProcessor(unittest.TestCase):
     del self.valid_batch
     del self.BatchProcessor
 
-  # def test_fast_shuffle(self):
-    # test = np.asarray(self.BatchProcessor.preprocessors[0].get_dataset())
-    # first = test[0]
-    # last = test[-1]
-    # randomized = self.full_batch.fs(test)
-    # rfirst = randomized[0]
-    # rlast = randomized[-1]
-    # test = np.asarray([(X, y) for X, y in self.full_batch])
-    # pdb.set_trace()
-
+  @unittest.skipUnless(config.benchmark, 'slow test')
   def test_bench(self):
     BP = BatchImgProcessor.load(
         X_dirpath='../data/train/*',
         y_dirpath='../data/train_cleaned/',
         batchsize=50000,
         border=3,
-        limit=None,
+        limit=2,
         train_stepover=8)
     full_slow = BP(random=False, slow=True)
     full_slow_random = BP(random=True, slow=True)

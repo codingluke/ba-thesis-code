@@ -6,6 +6,7 @@ import PIL.Image
 import cPickle
 import pdb
 import theano
+from timeit import default_timer as timer
 
 from network import Network, ConvPoolLayer, FullyConnectedLayer, \
                     tanh, ReLU
@@ -43,6 +44,7 @@ validation_data = BatchProcessor(modus='valid')
 #n_in = 121
 n_in = 49
 
+start = timer()
 mini_batch_size = 500
 net = Network([
 #        ConvPoolLayer(image_shape=(mini_batch_size, 1, 258, 540),
@@ -64,6 +66,8 @@ net = Network([
 #print '...start training'
 net.SGD(training_data, 100, mini_batch_size, 0.025,
         validation_data, test_data=None, lmbda=0.0)
+end = timer()
+print "Zeit : %d" (end-start)
 
 f = open('model_b3_l144.pkl', 'wb')
 cPickle.dump(net, f)

@@ -1,5 +1,8 @@
 import unittest
 import importlib
+import pdb
+
+test = "hallo"
 
 def test(coverage=False, testcase=None):
     """Run the unit tests."""

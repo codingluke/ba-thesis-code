@@ -101,9 +101,8 @@ class BatchImgProcessor(object):
               raise StopIteration
 
     def fs(self, series):
-        split = np.split(series, self.batchsize / 4)
+        split = np.array(np.split(series, self.batchsize / 4))
         np.random.shuffle(split)
-        # pdb.set_trace()
         return np.concatenate(split)
 
 class ImgPreprocessor(object):
