@@ -45,7 +45,7 @@ class TestBatchImgProcessor(unittest.TestCase):
         y_dirpath='../data/train_cleaned/',
         batchsize=50000,
         border=3,
-        limit=2,
+        limit=None,
         train_stepover=8)
     full_slow = BP(random=False, slow=True)
     full_slow_random = BP(random=True, slow=True)
