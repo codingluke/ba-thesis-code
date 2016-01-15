@@ -89,15 +89,23 @@ class BatchImgProcessor(object):
                     self.i_preprocessor += 1
                     if len(self.buffer) >= self.batchsize:
                         break
-            if self.random:
-                np.random.shuffle(self.buffer)
             if len(self.buffer[:self.batchsize]) == self.batchsize:
-              X, y = izip(*self.buffer[:self.batchsize])
-              self.buffer = self.buffer[self.batchsize:]
-              return np.asarray(X, dtype=self.dtype),  \
-                     np.asarray(y, dtype=self.dtype)
+                batch = np.asarray(self.buffer[:self.batchsize])
+                # if self.random: np.random.shuffle(batch)
+                if self.random: batch = self.__fs(batch)
+                X, y = izip(*batch)
+                self.buffer = self.buffer[self.batchsize:]
+                return np.asarray(X, dtype=self.dtype),  \
+                       np.asarray(y, dtype=self.dtype)
             else:
               raise StopIteration
+
+    # def __mklist(self, series):
+        # return [e for e in series]
+
+    def __fs(self, series):
+        length = series.shape[1]
+        return series[:, np.random.permutation(length)]
 
 class ImgPreprocessor(object):
 
