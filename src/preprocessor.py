@@ -91,8 +91,8 @@ class BatchImgProcessor(object):
                         break
             if len(self.buffer[:self.batchsize]) == self.batchsize:
                 batch = np.asarray(self.buffer[:self.batchsize])
-                # if self.random: np.random.shuffle(batch)
-                if self.random: batch = self.fs(batch)
+                if self.random: np.random.shuffle(batch)
+                # if self.random: batch = self.fs(batch)
                 X, y = izip(*batch)
                 self.buffer = self.buffer[self.batchsize:]
                 return np.asarray(X, dtype=self.dtype),  \

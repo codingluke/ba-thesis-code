@@ -67,7 +67,7 @@ net = Network([
 net.SGD(training_data, 100, mini_batch_size, 0.025,
         validation_data, test_data=None, lmbda=0.0)
 end = timer()
-print "Zeit : %d" (end-start)
+print "Zeit : %d" % (end-start)
 
 f = open('model_b3_l144.pkl', 'wb')
 cPickle.dump(net, f)
