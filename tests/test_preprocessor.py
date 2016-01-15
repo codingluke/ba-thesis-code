@@ -37,12 +37,30 @@ class TestBatchImgProcessor(unittest.TestCase):
         border=3,
         limit=None,
         train_stepover=8)
-    full = BP(random=False)
+    full_slow = BP(random=False, slow=True)
+    full_slow_random = BP(random=True, slow=True)
+    full_fast = BP(random=False, slow=False)
+    full_fast_random = BP(random=True, slow=False)
+
     start = timer()
-    for X, y in full:
-      None
+    for X, y in full_slow: None
     end = timer()
-    print end - start
+    print "slow:\t\t %d" % (end - start)
+
+    start = timer()
+    for X, y in full_slow_random: None
+    end = timer()
+    print "slow rand:\t\t %d" % (end - start)
+
+    start = timer()
+    for X, y in full_fast: None
+    end = timer()
+    print "fast:\t\t %d" % (end - start)
+
+    start = timer()
+    for X, y in full_fast_random: None
+    end = timer()
+    print "fast rand:\t\t %d" % (end - start)
 
   def test_len(self):
     # Pixels manually calculated according test images

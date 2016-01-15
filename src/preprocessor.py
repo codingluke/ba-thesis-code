@@ -38,7 +38,8 @@ class BatchImgProcessor(object):
                              for img in glob.glob(X_dirpath)[:limit]]
         return cls
 
-    def __init__(self, modus='full', random=False):
+    def __init__(self, modus='full', random=False, slow=False):
+        self.slow = slow
         self.to_modus(modus)
         self.random = random
         self.i = 0
@@ -60,7 +61,7 @@ class BatchImgProcessor(object):
     def __len__(self):
         buffer = rounding = 0
         for p in self.preprocessors:
-            buffer += p.length_slow(modus=self.modus)
+            buffer += p.length(modus=self.modus, slow=self.slow)
         return (buffer / self.batchsize)
 
     def __iter__(self):
@@ -83,7 +84,8 @@ class BatchImgProcessor(object):
             self.i += 1
             if len(self.buffer) <= self.batchsize:
                 for p in self.preprocessors[self.i_preprocessor:]:
-                    self.buffer.extend(p.get_dataset(modus=self.modus))
+                    self.buffer.extend(p.get_dataset(modus=self.modus,
+                                                     slow=self.slow))
                     self.i_preprocessor += 1
                     if len(self.buffer) >= self.batchsize:
                         break
@@ -110,12 +112,16 @@ class ImgPreprocessor(object):
         self.border = border
         self.stepover = train_stepover
 
-    def get_dataset(self, modus=None):
-        return zip(self._get_X(modus=modus), self._get_y(modus=modus))
-        # return zip(self._get_X_fast(modus=modus),
-                   # self._get_y_fast(modus=modus))
+    def get_dataset(self, modus=None, slow=False):
+        if slow:
+            return zip(self._get_X(modus=modus), self._get_y(modus=modus))
+        else:
+            return zip(self._get_X_fast(modus=modus),
+                       self._get_y_fast(modus=modus))
 
-    def length(self, modus=None):
+    def length(self, modus=None, slow=False):
+        if slow:
+            return self.length_slow(modus=modus)
         pixels = self.X_img.size[0] * self.X_img.size[1]
         if modus == None or modus == 'full':
             return pixels
