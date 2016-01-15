@@ -60,7 +60,7 @@ class BatchImgProcessor(object):
     def __len__(self):
         buffer = rounding = 0
         for p in self.preprocessors:
-            buffer += p.length(modus=self.modus)
+            buffer += p.length_slow(modus=self.modus)
         return (buffer / self.batchsize)
 
     def __iter__(self):
@@ -111,9 +111,9 @@ class ImgPreprocessor(object):
         self.stepover = train_stepover
 
     def get_dataset(self, modus=None):
-        # return zip(self._get_X(modus=modus), self._get_y(modus=modus))
-        return zip(self._get_X_fast(modus=modus),
-                   self._get_y_fast(modus=modus))
+        return zip(self._get_X(modus=modus), self._get_y(modus=modus))
+        # return zip(self._get_X_fast(modus=modus),
+                   # self._get_y_fast(modus=modus))
 
     def length(self, modus=None):
         pixels = self.X_img.size[0] * self.X_img.size[1]

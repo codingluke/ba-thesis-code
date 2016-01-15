@@ -71,7 +71,7 @@ f = open('model_b3_l144.pkl', 'rb')
 net = cPickle.load(f)
 
 test_x = np.array(l.x_from_image('../../data/test/1.png', border=border))
-y = net3.predict(test_x)
+y = net.predict(test_x)
 y2 = np.vstack(np.array(y).flatten())
 orig = np.resize(y2, (258, 540)) * 255
 img = PIL.Image.fromarray(orig)

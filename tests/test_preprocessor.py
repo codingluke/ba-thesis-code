@@ -29,6 +29,21 @@ class TestBatchImgProcessor(unittest.TestCase):
     del self.valid_batch
     del self.BatchProcessor
 
+  def test_bench(self):
+    BP = BatchImgProcessor.load(
+        X_dirpath='../data/train/*',
+        y_dirpath='../data/train_cleaned/',
+        batchsize=50000,
+        border=3,
+        limit=None,
+        train_stepover=8)
+    full = BP(random=False)
+    start = timer()
+    for X, y in full:
+      None
+    end = timer()
+    print end - start
+
   def test_len(self):
     # Pixels manually calculated according test images
     pixels = 50*34*2 / self.full_batch.batchsize
