@@ -92,7 +92,7 @@ class BatchImgProcessor(object):
             if len(self.buffer[:self.batchsize]) == self.batchsize:
                 batch = np.asarray(self.buffer[:self.batchsize])
                 # if self.random: np.random.shuffle(batch)
-                if self.random: batch = self.__fs(batch)
+                if self.random: batch = self.fs(batch)
                 X, y = izip(*batch)
                 self.buffer = self.buffer[self.batchsize:]
                 return np.asarray(X, dtype=self.dtype),  \
@@ -100,12 +100,11 @@ class BatchImgProcessor(object):
             else:
               raise StopIteration
 
-    # def __mklist(self, series):
-        # return [e for e in series]
-
-    def __fs(self, series):
-        length = series.shape[1]
-        return series[:, np.random.permutation(length)]
+    def fs(self, series):
+        split = np.split(series, self.batchsize / 4)
+        np.random.shuffle(split)
+        # pdb.set_trace()
+        return np.concatenate(split)
 
 class ImgPreprocessor(object):
 
