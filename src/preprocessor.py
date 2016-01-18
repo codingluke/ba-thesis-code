@@ -34,7 +34,8 @@ class BatchImgProcessor(object):
         cls.dtype = dtype
         cls.preprocessors = [ImgPreprocessor(X_imgpath=img,
                                              y_dirpath=y_dirpath,
-                                             train_stepover=train_stepover)
+                                             train_stepover=train_stepover,
+					     border=border)
                              for img in glob.glob(X_dirpath)[:limit]]
         return cls
 
