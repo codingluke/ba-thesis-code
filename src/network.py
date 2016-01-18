@@ -126,6 +126,8 @@ class Network():
             validation_data, test_data=None, lmbda=0.0):
         """Train the network using mini-batch stochastic gradient descent."""
         first_file = True
+	print "training_len %d" % len(training_data)
+	print "Validation_len %d" % len(validation_data)
 
         # Prepare Theano shared variables with the shape and type of
         # The train, valid batches.
@@ -199,13 +201,13 @@ class Network():
         best_validation_accuracy = 1.0
         done_looping = False
 
-        patience = 20000  # look as this many examples regardless
-        patience_increase = 2  # wait this much longer when a new best is
+        patience = 40000  # look as this many examples regardless
+        patience_increase = 2.5  # wait this much longer when a new best is
                                # found
         improvement_threshold = 0.995  # a relative improvement of this much is
                                    # considered significant
 
-        validation_frequency = 5000
+        validation_frequency = 10000
         #validation_frequency = min(num_training_batches * len(training_data),
                                    #patience / 2)
                                   # go through this many
@@ -218,6 +220,7 @@ class Network():
         for epoch in xrange(epochs):
             if done_looping: break
             for train_x, train_y in training_data:
+            	if done_looping: break
                 training_x = tshared(train_x)
                 training_y = tshared(train_y)
                 for minibatch_index in xrange(num_training_batches):
@@ -242,12 +245,15 @@ class Network():
                             if (validation_accuracy < best_validation_accuracy*
                                 improvement_threshold):
                                 patience = max(patience,
-                                               iteration * patience_increase)
+                                               int(iteration * patience_increase))
                                 print "iter {0}, patience {1}".format(
                                     iteration, patience)
                             best_validation_accuracy = validation_accuracy
 
                     if patience <= iteration:
+            		print "iter %i" % iteration
+            		print "patience %i" % patience
+			print 'break'
                         done_looping = True
                         break
 

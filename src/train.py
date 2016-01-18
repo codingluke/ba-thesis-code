@@ -12,7 +12,7 @@ from network import Network, ConvPoolLayer, FullyConnectedLayer, \
                     tanh, ReLU
 from preprocessor import BatchImgProcessor
 
-border = 3
+border = 4
 
 #training_data = (l.DataIter('./data/dump/b5_c500000_l50_train_x*'),
                  #l.DataIter('./data/dump/b5_c500000_l50_train_y*'))
@@ -32,9 +32,9 @@ border = 3
 BatchProcessor = BatchImgProcessor.load(
     X_dirpath='../../data/train/*',
     y_dirpath='../../data/train_cleaned/',
-    batchsize=100000,
+    batchsize=500000,
     border=border,
-    limit=None,
+    limit=20,
     train_stepover=8,
     dtype=theano.config.floatX)
 training_data = BatchProcessor(modus='train', random=True)
@@ -42,7 +42,7 @@ validation_data = BatchProcessor(modus='valid')
 
 #print training_data[0].files
 #n_in = 121
-n_in = 49
+n_in = 81
 
 start = timer()
 mini_batch_size = 500
@@ -69,9 +69,9 @@ net.SGD(training_data, 100, mini_batch_size, 0.025,
 end = timer()
 print "Zeit : %d" % (end-start)
 
-f = open('model_b3_l144.pkl', 'wb')
+f = open('model_b4_l144_bs20000000.pkl', 'wb')
 cPickle.dump(net, f)
-f = open('model_b3_l144.pkl', 'rb')
+f = open('model_b4_l144_bs20000000.pkl', 'rb')
 net = cPickle.load(f)
 
 test_x = np.array(l.x_from_image('../../data/test/1.png', border=border))
