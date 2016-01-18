@@ -107,4 +107,5 @@ venv/
 
 upload_data.sh
 **/**/output/
+cleaned/
 
