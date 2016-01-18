@@ -14,27 +14,12 @@ from preprocessor import BatchImgProcessor
 
 border = 4
 
-#training_data = (l.DataIter('./data/dump/b5_c500000_l50_train_x*'),
-                 #l.DataIter('./data/dump/b5_c500000_l50_train_y*'))
-#validation_data = (l.DataIter('./data/dump/b5_c500000_l50_valid_x*'),
-                   #l.DataIter('./data/dump/b5_c500000_l50_valid_y*'))
-
-#training_data = l.DataIter(x_path='./data/dump/b5_c500000_l50_train_x*',
-                           #y_path='./data/dump/b5_c500000_l50_train_y*')
-#validation_data = l.DataIter(x_path='./data/dump/b5_c500000_l50_valid_x*',
-                             #y_path='./data/dump/b5_c500000_l50_valid_y*')
-
-# training_data = l.DataIter(x_path='./data/dump/b3b3_c1000000_l144_train_x*',
-                           # y_path='./data/dump/b3b3_c1000000_l144_train_y*')
-# validation_data = l.DataIter(x_path='./data/dump/b3b3_c1000000_l144_valid_x*',
-                             # y_path='./data/dump/b3b3_c1000000_l144_valid_y*')
-
 BatchProcessor = BatchImgProcessor.load(
     X_dirpath='../../data/train/*',
     y_dirpath='../../data/train_cleaned/',
     batchsize=500000,
     border=border,
-    limit=20,
+    limit=5,
     train_stepover=8,
     dtype=theano.config.floatX)
 training_data = BatchProcessor(modus='train', random=True)
@@ -63,9 +48,12 @@ net = Network([
         #FullyConnectedLayer(n_in=100, n_out=1, activation_fn=tanh)
     ], mini_batch_size)
 
-#print '...start training'
-net.SGD(training_data, 100, mini_batch_size, 0.025,
-        validation_data, test_data=None, lmbda=0.0)
+print '...start training'
+net.SGD(training_data=training_data, epochs=100,
+        mini_batch_size=mini_batch_size, eta=0.025,
+        validation_data=validation_data, lmbda=0.0,
+        momentum=None, patience=40000, patience_increase=2,
+        improvement_threshold=0.995, validation_frequency=5000)
 end = timer()
 print "Zeit : %d" % (end-start)
 

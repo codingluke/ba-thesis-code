@@ -122,10 +122,10 @@ class Network():
         num_batches = len(data)/self.mini_batch_size
         return [predictions(j) for j in xrange(num_batches)]
 
-    def SGD(self, training_data, epochs, mini_batch_size, eta,
-            validation_data, test_data=None, lmbda=0.0):
+    def SGD(self, training_data=None, epochs=10, mini_batch_size=100, eta=0.025,
+            validation_data=None, lmbda=0.0, momentum=None, patience=40000,
+            patience_increase=2, improvement_threshold=0.995, validation_frequency=5000):
         """Train the network using mini-batch stochastic gradient descent."""
-        first_file = True
 	print "training_len %d" % len(training_data)
 	print "Validation_len %d" % len(validation_data)
 
@@ -179,6 +179,7 @@ class Network():
 
         # define functions to train a mini-batch, and to compute the
         # accuracy in validation and test mini-batches.
+
         i = T.lscalar() # mini-batch index
         train_mb = theano.function(
             [i], cost, updates=updates,
@@ -188,6 +189,7 @@ class Network():
                 self.y:
                 training_y[i*self.mini_batch_size: (i+1)*self.mini_batch_size]
             })
+
         validate_mb_accuracy = theano.function(
             [i], self.layers[-1].accuracy(self.y),
             givens={
@@ -201,26 +203,11 @@ class Network():
         best_validation_accuracy = 1.0
         done_looping = False
 
-        patience = 40000  # look as this many examples regardless
-        patience_increase = 2.5  # wait this much longer when a new best is
-                               # found
-        improvement_threshold = 0.995  # a relative improvement of this much is
-                                   # considered significant
-
-        validation_frequency = 10000
-        #validation_frequency = min(num_training_batches * len(training_data),
-                                   #patience / 2)
-                                  # go through this many
-                                  # minibatche before checking the network
-                                  # on the validation set; in this case we
-                                  # check every epoch
-        print validation_frequency
-
         iteration = 0
         for epoch in xrange(epochs):
             if done_looping: break
             for train_x, train_y in training_data:
-            	if done_looping: break
+                if done_looping: break
                 training_x = tshared(train_x)
                 training_y = tshared(train_y)
                 for minibatch_index in xrange(num_training_batches):
@@ -251,8 +238,8 @@ class Network():
                             best_validation_accuracy = validation_accuracy
 
                     if patience <= iteration:
-            		print "iter %i" % iteration
-            		print "patience %i" % patience
+                        print "iter %i" % iteration
+                        print "patience %i" % patience
 			print 'break'
                         done_looping = True
                         break
