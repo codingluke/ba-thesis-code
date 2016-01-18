@@ -24,7 +24,7 @@ class BatchImgProcessor(object):
 
     @classmethod
     def load(cls, X_dirpath=None, y_dirpath=None, border=3,
-            train_stepover=8, limit=None, batchsize=None, dtype='float64'):
+            train_stepover=8, limit=None, batchsize=None, dtype='float32'):
         cls.X_dirpath = X_dirpath
         cls.y_dirpath = y_dirpath
         cls.border = border

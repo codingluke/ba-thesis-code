@@ -12,14 +12,15 @@ from network import Network, ConvPoolLayer, FullyConnectedLayer, \
                     tanh, ReLU
 from preprocessor import BatchImgProcessor
 
-border = 4
+border = 3
+print theano.config.floatX
 
 BatchProcessor = BatchImgProcessor.load(
     X_dirpath='../../data/train/*',
     y_dirpath='../../data/train_cleaned/',
-    batchsize=500000,
+    batchsize=50000,
     border=border,
-    limit=5,
+    limit=20,
     train_stepover=8,
     dtype=theano.config.floatX)
 training_data = BatchProcessor(modus='train', random=True)
@@ -27,7 +28,7 @@ validation_data = BatchProcessor(modus='valid')
 
 #print training_data[0].files
 #n_in = 121
-n_in = 81
+n_in = (2*border+1)**2
 
 start = timer()
 mini_batch_size = 500

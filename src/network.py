@@ -126,23 +126,28 @@ class Network():
             validation_data=None, lmbda=0.0, momentum=None, patience=40000,
             patience_increase=2, improvement_threshold=0.995, validation_frequency=5000):
         """Train the network using mini-batch stochastic gradient descent."""
-	print "training_len %d" % len(training_data)
-	print "Validation_len %d" % len(validation_data)
+        print "training_len %d" % len(training_data)
+        print "Validation_len %d" % len(validation_data)
+        print "mini_batch_size %d" % mini_batch_size
 
         # Prepare Theano shared variables with the shape and type of
         # The train, valid batches.
         train_x_zeros, train_y_zeros = training_data.next()
         training_x = tshared(train_x_zeros)
         training_y = tshared(train_y_zeros)
+        print train_x_zeros.shape
         training_data.reset()
         valid_x_zeros, valid_y_zeros = validation_data.next()
         validation_x = tshared(valid_x_zeros)
         validation_y = tshared(valid_y_zeros)
+        print valid_x_zeros.shape
         validation_data.reset()
 
         # compute number of minibatches for training, validation and testing
         num_training_batches = size(training_x) / mini_batch_size
         num_validation_batches = size(validation_x) / mini_batch_size
+        print "num_training_batches %d" % num_training_batches
+        print "num_validation_batches %d" % num_validation_batches
 
         # define the (regularized) cost function,
         # symbolic gradients, and updates
@@ -163,6 +168,7 @@ class Network():
             g = g / gradient_scaling
             updates.append((acc, acc_new))
             updates.append((p, p - eta * g))
+        print "hallo"
 
         # With MOMENTUM
         #updates = []
@@ -181,6 +187,9 @@ class Network():
         # accuracy in validation and test mini-batches.
 
         i = T.lscalar() # mini-batch index
+        print theano.config.floatX
+        print training_x.type
+        print training_y.type
         train_mb = theano.function(
             [i], cost, updates=updates,
             givens={
@@ -198,6 +207,7 @@ class Network():
                 self.y:
                 validation_y[i*self.mini_batch_size: (i+1)*self.mini_batch_size]
             })
+        print "hallo"
 
         # Do the actual training
         best_validation_accuracy = 1.0
@@ -205,12 +215,16 @@ class Network():
 
         iteration = 0
         for epoch in xrange(epochs):
+            print "hallo"
             if done_looping: break
             for train_x, train_y in training_data:
+                print "hallo"
                 if done_looping: break
                 training_x = tshared(train_x)
                 training_y = tshared(train_y)
                 for minibatch_index in xrange(num_training_batches):
+                    print "hallo"
+
                     iteration += 1
                     train_mb(minibatch_index)
 
@@ -240,7 +254,7 @@ class Network():
                     if patience <= iteration:
                         print "iter %i" % iteration
                         print "patience %i" % patience
-			print 'break'
+                        print 'break'
                         done_looping = True
                         break
 
@@ -248,6 +262,7 @@ class Network():
             print "patience %i" % patience
 
         print("Finished training network.")
+        return best_validation_accuracy
 
 #### Define layer types
 
@@ -379,4 +394,5 @@ def dropout_layer(layer, p_dropout):
 
 def tshared(data):
     dtype = theano.config.floatX
-    return theano.shared(np.asarray(data, dtype=dtype), borrow=True)
+    print dtype
+    return theano.shared(np.asarray(data, dtype=dtype),  borrow=False)
