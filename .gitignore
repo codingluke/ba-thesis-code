@@ -106,5 +106,6 @@ pip-selfcheck.json
 venv/
 
 upload_data.sh
+**/**/output/
 cleaned/
 
