@@ -202,7 +202,7 @@ class Network():
         done_looping = False
 
         patience = 40000  # look as this many examples regardless
-        patience_increase = 2.5  # wait this much longer when a new best is
+        patience_increase = 2  # wait this much longer when a new best is
                                # found
         improvement_threshold = 0.995  # a relative improvement of this much is
                                    # considered significant
