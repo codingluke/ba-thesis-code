@@ -30,6 +30,24 @@ class TestBatchImgProcessor(unittest.TestCase):
     del self.valid_batch
     del self.BatchProcessor
 
+  def test_size(self):
+    BP = BatchImgProcessor.load(
+        X_dirpath='../data/train/*',
+        y_dirpath='../data/train_cleaned/',
+        batchsize=1000000,
+        border=3,
+        limit=None,
+        train_stepover=8)
+    pdb.set_trace()
+
+  def test_iterating(self):
+    test1 = [(X,y) for X, y in self.train_batch]
+    test2 = [(X,y) for X, y in self.train_batch]
+    test3 = [(X,y) for X, y in self.train_batch]
+    test4 = [(X,y) for X, y in self.train_batch]
+    test5 = [(X,y) for X, y in self.train_batch]
+    pdb.set_trace()
+
   @unittest.skipUnless(config.benchmark, 'slow test')
   def test_bench(self):
     BP = BatchImgProcessor.load(
