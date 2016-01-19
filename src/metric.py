@@ -10,9 +10,32 @@ from pymongo import MongoClient
 
 class MetricReader(object):
 
-    def __init__(self):
+    def __init__(self, config_dir_path=None):
+        self.options = self.__get_options(config_dir_path)
+        self.connection, self.db, self.metrics, self.meta = self.__connect()
+
+    def get_records(self, job_id=None):
+        return self.metrics.find({'job_id' : job_id})
+
+    def get_best_records(self):
         None
 
+    def get_best_job_id(self):
+        None
+
+    def get_metadata(self):
+        experiment_name = self.options['experiment-name']
+        return self.meta.find_one({ 'experiment_name' : experiment_name})
+
+    def __connect(self):
+        db_name = self.options['database']['name']
+        db_address = self.options['database']['address']
+        experiment_name = self.options['experiment-name']
+        connection = MongoClient(db_address)
+        db = connection[db_name]
+        metrics = db.db[experiment_name]['metrics']
+        meta = db.db['meta']
+        return connection, db, metrics, meta
 
 class MetricRecorder(object):
 
@@ -34,17 +57,17 @@ class MetricRecorder(object):
         if self.endtime != 0:
             return self.endtime - self.starttime
         else:
-            timer() - self.starttime
+            return timer() - self.starttime
 
     def record(self, job_id=None, cost=None, validation_accuracy=None,
-            epoche=None, iteration=None, second=None):
+            epoch=None, iteration=None, second=None):
         if not job_id: job_id = self.job_id
         if not second: second = self.duration()
         doc = {
             'job_id' : job_id,
-            'cost' : cost,
-            'validation_accuracy' : validation_accuracy,
-            'epoche' : epoche,
+            'cost' : float(cost),
+            'validation_accuracy' : float(validation_accuracy),
+            'epoch' : epoch,
             'iteration' : iteration,
             'second' : second
         }
@@ -81,22 +104,22 @@ class MetricRecorder(object):
         meta = db.db['meta']
         return connection, db, metrics, meta
 
-    def __get_options(self, dir_path):
-        # Read in the config file
-        expt_dir  = os.path.realpath(os.path.expanduser(dir_path))
-        if not os.path.isdir(expt_dir):
-            raise Exception("Cannot find directory %s" % expt_dir)
-        expt_file = os.path.join(expt_dir, 'config.json')
+def __get_options(self, dir_path):
+    # Read in the config file
+    expt_dir  = os.path.realpath(os.path.expanduser(dir_path))
+    if not os.path.isdir(expt_dir):
+        raise Exception("Cannot find directory %s" % expt_dir)
+    expt_file = os.path.join(expt_dir, 'config.json')
 
-        try:
-            with open(expt_file, 'r') as f:
-                options = json.load(f, object_pairs_hook=OrderedDict)
-        except:
-            raise Exception("config.json did not load properly. Perhaps a spurious comma?")
+    try:
+        with open(expt_file, 'r') as f:
+            options = json.load(f, object_pairs_hook=OrderedDict)
+    except:
+        raise Exception("config.json did not load properly. Perhaps a spurious comma?")
 
-        if not os.path.exists(expt_dir):
-            sys.stderr.write("Cannot find experiment directory '%s'. "
-                             "Aborting.\n" % (expt_dir))
-            sys.exit(-1)
+    if not os.path.exists(expt_dir):
+        sys.stderr.write("Cannot find experiment directory '%s'. "
+                         "Aborting.\n" % (expt_dir))
+        sys.exit(-1)
 
-        return options
+    return options

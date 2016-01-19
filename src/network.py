@@ -83,8 +83,6 @@ class Network():
                        for param in layer.params]
         self.x = T.matrix("x", dtype=theano.config.floatX)
         self.y = T.matrix("y", dtype=theano.config.floatX)
-        print self.x.type
-        print self.y.type
         init_layer = self.layers[0]
         init_layer.set_inpt(self.x, self.x, self.mini_batch_size)
         for j in xrange(1, len(self.layers)):
@@ -124,13 +122,14 @@ class Network():
         num_batches = len(data)/self.mini_batch_size
         return [predictions(j) for j in xrange(num_batches)]
 
-    def SGD(self, training_data=None, epochs=10, mini_batch_size=100, eta=0.025,
-            validation_data=None, lmbda=0.0, momentum=None, patience=40000,
-            patience_increase=2, improvement_threshold=0.995, validation_frequency=5000):
+    def SGD(self, training_data=None, epochs=10, mini_batch_size=100,
+            eta=0.025, validation_data=None, lmbda=0.0, momentum=None,
+            patience=40000, patience_increase=2, improvement_threshold=0.995,
+            validation_frequency=5000, metric_recorder=None):
         """Train the network using mini-batch stochastic gradient descent."""
-        print "training_len %d" % len(training_data)
-        print "Validation_len %d" % len(validation_data)
-        print "mini_batch_size %d" % mini_batch_size
+
+        if not validation_data or len(validation_data) < 1:
+            raise Exception("no validation data")
 
         # Prepare Theano shared variables with the shape and type of
         # The train, valid batches.
@@ -184,8 +183,6 @@ class Network():
         # accuracy in validation and test mini-batches.
 
         i = T.lscalar() # mini-batch index
-        print training_x.type
-        print training_y.type
         train_mb = theano.function(
             [i], cost, updates=updates,
             givens={
@@ -218,7 +215,7 @@ class Network():
                 for minibatch_index in xrange(num_training_batches):
 
                     iteration += 1
-                    train_mb(minibatch_index)
+                    cost = train_mb(minibatch_index)
 
                     if (iteration + 1) % validation_frequency == 0:
                         valid_acc = []
@@ -229,6 +226,10 @@ class Network():
                                     [validate_mb_accuracy(j)
                                      for j in xrange(num_validation_batches)])
                         validation_accuracy = np.mean(valid_acc)
+                        if metric_recorder:
+                            metric_recorder.record(cost=cost,
+                                validation_accuracy=validation_accuracy,
+                                epoch=epoch, iteration=iteration)
 
                         print("Epoch {0}: validation accuracy {1}".format(
                             epoch, validation_accuracy))

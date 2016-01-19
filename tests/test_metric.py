@@ -41,7 +41,7 @@ class TestMetricRecorder(unittest.TestCase):
   def test_record(self):
     doc = {u'cost' : 0.22,
            u'validation_accuracy' : 0.9,
-           u'epoche' : 1, u'iteration' : 4000, u'second' : 209 }
+           u'epoch' : 1, u'iteration' : 4000, u'second' : 209 }
     self.metric.record(**doc) # fany unpacking trick
     record = self.metric.metrics.find_one({'job_id' : 1})
     doc2 = record
@@ -52,19 +52,19 @@ class TestMetricRecorder(unittest.TestCase):
   def test_clean_job(self):
     doc1 = {u'cost' : 0.22,
            u'validation_accuracy' : 0.9,
-           u'epoche' : 1, u'iteration' : 4000, u'second' : 209 }
+           u'epoch' : 1, u'iteration' : 4000, u'second' : 209 }
     doc2 = {u'cost' : 0.26,
            u'validation_accuracy' : 0.89,
-           u'epoche' : 2, u'iteration' : 8000, u'second' : 418 }
+           u'epoch' : 2, u'iteration' : 8000, u'second' : 418 }
     self.metric.record(**doc1) # fany unpacking trick
     self.metric.record(**doc2) # fany unpacking trick
 
     doc1 = {u'job_id' : 2, u'cost' : 0.22,
            u'validation_accuracy' : 0.9,
-           u'epoche' : 1, u'iteration' : 4000, u'second' : 209 }
+           u'epoch' : 1, u'iteration' : 4000, u'second' : 209 }
     doc2 = {u'job_id' : 2, u'cost' : 0.26,
            u'validation_accuracy' : 0.89,
-           u'epoche' : 2, u'iteration' : 8000, u'second' : 418 }
+           u'epoch' : 2, u'iteration' : 8000, u'second' : 418 }
     self.metric.record(**doc1) # fany unpacking trick
     self.metric.record(**doc2) # fany unpacking trick
 
@@ -81,7 +81,7 @@ class TestMetricRecorder(unittest.TestCase):
       u'mini_batch_size' : 500,
       u'batchsize' : 5000000,
       u'limit' : 20,
-      u'epochs' : 100,
+      u'epoch' : 100,
       u'patience' : 20000,
       u'patience_increase' : 2,
       u'improvement_threshold' : 0.995,
