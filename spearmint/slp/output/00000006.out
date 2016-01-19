@@ -1,0 +1,80 @@
+Job launching after 0.15 seconds in submission.
+Running python job.
+Changed into dir /home/05/45881/ba-thesis-code/spearmint/slp
+Importing train.py
+Running train.main()
+Got result 0.0128162649112
+Completed successfully in 368.10 seconds. [{u'main': 0.012816264911248841}]
+
+mongodb://s0545881:KNlZmiaNU@hadoop03.f4.htw-berlin.de:27020/s0545881
+s0545881
+
+cpu
+float64
+Anything printed here will end up in the output directory for job #6
+{u'n_hidden_layer': array([200]), u'eta': array([ 0.09151858]), u'border': array([2]), u'lmbda': array([ 0.2])}
+float64
+training_len 16
+Validation_len 4
+mini_batch_size 500
+(50000, 25)
+(50000, 25)
+num_training_batches 100
+num_validation_batches 100
+float64
+TensorType(float64, matrix)
+TensorType(float64, matrix)
+iter 1600
+patience 20000
+iter 3200
+patience 20000
+iter 4800
+patience 20000
+Epoch 3: validation accuracy 0.0135199488174
+Best validation accuracy to date.
+iter 4999, patience 20000
+iter 6400
+patience 20000
+iter 8000
+patience 20000
+iter 9600
+patience 20000
+Epoch 6: validation accuracy 0.0129129665674
+Best validation accuracy to date.
+iter 9999, patience 20000
+iter 11200
+patience 20000
+iter 12800
+patience 20000
+iter 14400
+patience 20000
+Epoch 9: validation accuracy 0.0128162649112
+Best validation accuracy to date.
+iter 14999, patience 29998
+iter 16000
+patience 29998
+iter 17600
+patience 29998
+iter 19200
+patience 29998
+Epoch 12: validation accuracy 0.0142664195448
+iter 20800
+patience 29998
+iter 22400
+patience 29998
+iter 24000
+patience 29998
+Epoch 15: validation accuracy 0.0208239603109
+iter 25600
+patience 29998
+iter 27200
+patience 29998
+iter 28800
+patience 29998
+iter 29998
+patience 29998
+break
+iter 29998
+patience 29998
+Finished training network.
+Result = 0.012816
