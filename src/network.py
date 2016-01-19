@@ -168,7 +168,6 @@ class Network():
             g = g / gradient_scaling
             updates.append((acc, acc_new))
             updates.append((p, p - eta * g))
-        print "hallo"
 
         # With MOMENTUM
         #updates = []
@@ -207,7 +206,6 @@ class Network():
                 self.y:
                 validation_y[i*self.mini_batch_size: (i+1)*self.mini_batch_size]
             })
-        print "hallo"
 
         # Do the actual training
         best_validation_accuracy = 1.0
@@ -215,15 +213,12 @@ class Network():
 
         iteration = 0
         for epoch in xrange(epochs):
-            print "hallo"
             if done_looping: break
             for train_x, train_y in training_data:
-                print "hallo"
                 if done_looping: break
                 training_x = tshared(train_x)
                 training_y = tshared(train_y)
                 for minibatch_index in xrange(num_training_batches):
-                    print "hallo"
 
                     iteration += 1
                     train_mb(minibatch_index)
@@ -394,5 +389,4 @@ def dropout_layer(layer, p_dropout):
 
 def tshared(data):
     dtype = theano.config.floatX
-    print dtype
     return theano.shared(np.asarray(data, dtype=dtype),  borrow=False)
