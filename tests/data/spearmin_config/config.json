@@ -1,0 +1,37 @@
+{
+    "language"        : "PYTHON",
+    "database" : {
+	"name" : "s0545881",
+	"address": "mongodb://s0545881:KNlZmiaNU@hadoop03.f4.htw-berlin.de:27020/s0545881"
+    },
+    "main-file"       : "train.py",
+    "experiment-name" : "test-experiment",
+    "likelihood"      : "NOISELESS",
+    "variables" : {
+        "border" : {
+            "type" : "INT",
+            "size" : 1,
+            "min"  : 2,
+            "max"  : 5
+        },
+        "n_hidden_layer" : {
+            "type" : "INT",
+            "size" : 1,
+            "min"  : 80,
+            "max"  : 200
+        },
+        "eta" : {
+            "type" : "FLOAT",
+            "size" : 1,
+            "min"  : 0.01,
+            "max"  : 0.1
+        },
+        "lmbda" : {
+            "type" : "FLOAT",
+            "size" : 1,
+            "min"  : 0.0,
+            "max"  : 0.00001
+        }
+    }
+}
+
