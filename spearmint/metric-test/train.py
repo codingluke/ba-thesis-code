@@ -14,20 +14,21 @@ from network import Network, ConvPoolLayer, FullyConnectedLayer, \
 from preprocessor import BatchImgProcessor
 from metric import MetricRecorder
 
-def train(job_id, border, n_hidden_layer, eta, lmbda):
+def train(job_id, border, n_hidden_layer, eta):
     print "Job ID: %d" % job_id
     metric_recorder = MetricRecorder(config_dir_path='.', job_id=job_id)
     C = {
         'X_dirpath' : '../../../data/train/*',
         'y_dirpath' : '../../../data/train_cleaned/',
         'mini_batch_size' : 500,
-        'batchsize' : 5000,
-        'limit' : 1,
-        'epochs' : 1,
+        'batchsize' : 5000000,
+        'limit' : 30,
+        'epochs' : 100,
         'patience' : 20000,
         'patience_increase' : 2,
         'improvement_threshold' : 0.995,
-        'validation_frequency' : 100
+        'validation_frequency' : 5000,
+        'lmbda' : 0.0
     }
     metric_recorder.add_experiment_metainfo(constants=C)
     metric_recorder.start()
@@ -53,7 +54,7 @@ def train(job_id, border, n_hidden_layer, eta, lmbda):
 
     result = net.SGD(training_data=training_data, epochs=C['epochs'],
                      mini_batch_size=C['mini_batch_size'], eta=eta,
-                     validation_data=validation_data, lmbda=lmbda,
+                     validation_data=validation_data, lmbda=C['lmbda'],
                      momentum=None, patience=C['patience'],
                      patience_increase=C['patience_increase'],
                      improvement_threshold=C['improvement_threshold'],
@@ -70,5 +71,4 @@ def main(job_id, params):
     print params
     return train(job_id, params['border'][0],
                  params['n_hidden_layer'][0],
-                 params['eta'][0],
-                 params['lmbda'][0])
+                 params['eta'][0])
