@@ -38,7 +38,6 @@ class TestBatchImgProcessor(unittest.TestCase):
         border=3,
         limit=None,
         train_stepover=8)
-    pdb.set_trace()
 
   def test_iterating(self):
     test1 = [(X,y) for X, y in self.train_batch]
@@ -46,7 +45,6 @@ class TestBatchImgProcessor(unittest.TestCase):
     test3 = [(X,y) for X, y in self.train_batch]
     test4 = [(X,y) for X, y in self.train_batch]
     test5 = [(X,y) for X, y in self.train_batch]
-    pdb.set_trace()
 
   @unittest.skipUnless(config.benchmark, 'slow test')
   def test_bench(self):
@@ -174,7 +172,6 @@ class TestPreprocessor(unittest.TestCase):
     y1 = self.preprocessor._get_y_fast()
     y2 = self.preprocessor._get_y()
     pass
-    # pdb.set_trace()
 
   def test_patchsize_according_bordersize(self):
     # The patch has to have (2*border+1)**2 pixels
