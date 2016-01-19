@@ -13,14 +13,13 @@ from network import Network, ConvPoolLayer, FullyConnectedLayer, \
 from preprocessor import BatchImgProcessor
 
 border = 3
-print theano.config.floatX
 
 BatchProcessor = BatchImgProcessor.load(
     X_dirpath='../../data/train/*',
     y_dirpath='../../data/train_cleaned/',
-    batchsize=50000,
+    batchsize=5000,
     border=border,
-    limit=20,
+    limit=1,
     train_stepover=8,
     dtype=theano.config.floatX)
 training_data = BatchProcessor(modus='train', random=True)
