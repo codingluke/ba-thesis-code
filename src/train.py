@@ -12,14 +12,14 @@ from network import Network, ConvPoolLayer, FullyConnectedLayer, \
                     tanh, ReLU
 from preprocessor import BatchImgProcessor
 
-border = 3
+border = 2
 
 BatchProcessor = BatchImgProcessor.load(
     X_dirpath='../../data/train/*',
     y_dirpath='../../data/train_cleaned/',
-    batchsize=5000,
+    batchsize=50000,
     border=border,
-    limit=1,
+    limit=5,
     train_stepover=8,
     dtype=theano.config.floatX)
 training_data = BatchProcessor(modus='train', random=True)
@@ -42,17 +42,17 @@ net = Network([
 #                      activation_fn=ReLU),
         #FullyConnectedLayer(n_in=40*61*132, n_out=10000, activation_fn=ReLU),
         #FullyConnectedLayer(n_in=n_in, n_out=100, activation_fn=tanh),
-        FullyConnectedLayer(n_in=n_in, n_out=100),
-        FullyConnectedLayer(n_in=100, n_out=1),
+        FullyConnectedLayer(n_in=n_in, n_out=80),
+        FullyConnectedLayer(n_in=80, n_out=1),
         #SoftmaxLayer(n_in=100, n_out=1)
         #FullyConnectedLayer(n_in=100, n_out=1, activation_fn=tanh)
     ], mini_batch_size)
 
 print '...start training'
 net.SGD(training_data=training_data, epochs=100,
-        mini_batch_size=mini_batch_size, eta=0.025,
+        mini_batch_size=mini_batch_size, eta=0.01,
         validation_data=validation_data, lmbda=0.0,
-        momentum=None, patience=40000, patience_increase=2,
+        momentum=None, patience=20000, patience_increase=2,
         improvement_threshold=0.995, validation_frequency=5000)
 end = timer()
 print "Zeit : %d" % (end-start)
