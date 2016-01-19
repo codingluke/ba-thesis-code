@@ -20,7 +20,7 @@ def train(job_id, border, n_hidden_layer, eta, lmbda):
     BatchProcessor = BatchImgProcessor.load(
         X_dirpath='../../../data/train/*',
         y_dirpath='../../../data/train_cleaned/',
-        batchsize=5000000,
+        batchsize=500000,
         border=border,
         limit=20,
         train_stepover=8,
