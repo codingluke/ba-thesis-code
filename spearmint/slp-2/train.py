@@ -20,9 +20,9 @@ def train(job_id, border, n_hidden_layer, eta, lmbda):
     BatchProcessor = BatchImgProcessor.load(
         X_dirpath='../../../data/train/*',
         y_dirpath='../../../data/train_cleaned/',
-        batchsize=50000,
+        batchsize=5000000,
         border=border,
-        limit=5,
+        limit=20,
         train_stepover=8,
         dtype=theano.config.floatX)
 
@@ -34,7 +34,7 @@ def train(job_id, border, n_hidden_layer, eta, lmbda):
                    FullyConnectedLayer(n_in=n_hidden_layer, n_out=1)],
                   mini_batch_size)
 
-    result = net.SGD(training_data=training_data, epochs=1,
+    result = net.SGD(training_data=training_data, epochs=100,
             mini_batch_size=mini_batch_size, eta=eta,
             validation_data=validation_data, lmbda=lmbda,
             momentum=None, patience=20000, patience_increase=2,

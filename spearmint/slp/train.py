@@ -13,9 +13,6 @@ from network import Network, ConvPoolLayer, FullyConnectedLayer, \
                     tanh, ReLU
 from preprocessor import BatchImgProcessor
 
-print theano.config.device
-print theano.config.floatX
-
 def train(job_id, border, n_hidden_layer, eta, lmbda):
     mini_batch_size = 500
     print theano.config.floatX
