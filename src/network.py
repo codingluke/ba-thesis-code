@@ -50,23 +50,6 @@ from theano.tensor import tanh
 
 np.random.seed(45675674)
 
-#### Load the MNIST data
-def load_data_shared(filename="../data/mnist.pkl.gz"):
-    f = gzip.open(filename, 'rb')
-    training_data, validation_data, test_data = cPickle.load(f)
-    f.close()
-    def shared(data):
-        """Place the data into shared variables.  This allows Theano to copy
-        the data to the GPU, if one is available.
-
-        """
-        shared_x = theano.shared(
-            np.asarray(data[0], dtype=theano.config.floatX), borrow=True)
-        shared_y = theano.shared(
-            np.asarray(data[1], dtype=theano.config.floatX), borrow=True)
-        return shared_x, T.cast(shared_y, "int32")
-    return [shared(training_data), shared(validation_data), shared(test_data)]
-
 #### Main class used to construct and train networks
 class Network():
 
@@ -125,7 +108,7 @@ class Network():
     def SGD(self, training_data=None, epochs=10, mini_batch_size=100,
             eta=0.025, validation_data=None, lmbda=0.0, momentum=None,
             patience=40000, patience_increase=2, improvement_threshold=0.995,
-            validation_frequency=5000, metric_recorder=None):
+            validation_frequency=1, metric_recorder=None):
         """Train the network using mini-batch stochastic gradient descent."""
 
         if not validation_data or len(validation_data) < 1:
@@ -144,7 +127,8 @@ class Network():
 
         # compute number of minibatches for training, validation and testing
         num_training_batches = size(training_x) / mini_batch_size
-        num_validation_batches = size(validation_x) / mini_batch_size
+        tota_num_training_batches = num_training_batches * len(training_data)
+        num_validation_batches = size(validation_x) / tota_num_training_batches
 
         # define the (regularized) cost function,
         # symbolic gradients, and updates
@@ -205,11 +189,16 @@ class Network():
         best_validation_accuracy = 1.0
         done_looping = False
 
+        val_per_epochs = training_data.actual_full_length() / mini_batch_size
+        validation_frequency = int(val_per_epochs/ validation_frequency)
+
         iteration = 0
         for epoch in xrange(epochs):
             if done_looping: break
+            train_itr = 0
             for train_x, train_y in training_data:
                 if done_looping: break
+                train_itr += 1
                 training_x = tshared(train_x)
                 training_y = tshared(train_y)
                 for minibatch_index in xrange(num_training_batches):
@@ -217,7 +206,7 @@ class Network():
                     iteration += 1
                     cost = train_mb(minibatch_index)
 
-                    if (iteration + 1) % validation_frequency == 0:
+                    if iteration % validation_frequency == 0:
                         valid_acc = []
                         for valid_x, valid_y in validation_data:
                             validation_x = tshared(valid_x)
