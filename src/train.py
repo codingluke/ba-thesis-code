@@ -19,11 +19,13 @@ BatchProcessor = BatchImgProcessor.load(
     y_dirpath='../../data/train_cleaned/',
     batchsize=50000,
     border=border,
-    limit=5,
+    limit=15,
     train_stepover=8,
     dtype=theano.config.floatX)
 training_data = BatchProcessor(modus='train', random=True)
 validation_data = BatchProcessor(modus='valid')
+print "Training size: %d" % len(training_data)
+print "Validation size: %d" % len(validation_data)
 
 #print training_data[0].files
 #n_in = 121
@@ -50,10 +52,10 @@ net = Network([
 
 print '...start training'
 net.SGD(training_data=training_data, epochs=100,
-        mini_batch_size=mini_batch_size, eta=0.01,
-        validation_data=validation_data, lmbda=0.0,
+        mini_batch_size=mini_batch_size, eta=0.025,
+        validation_data=validation_data, lmbda=0.001,
         momentum=None, patience=20000, patience_increase=2,
-        improvement_threshold=0.995, validation_frequency=5000)
+        improvement_threshold=0.995, validation_frequency=2)
 end = timer()
 print "Zeit : %d" % (end-start)
 

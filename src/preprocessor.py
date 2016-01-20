@@ -35,7 +35,7 @@ class BatchImgProcessor(object):
         cls.preprocessors = [ImgPreprocessor(X_imgpath=img,
                                              y_dirpath=y_dirpath,
                                              train_stepover=train_stepover,
-					     border=border)
+                                             border=border)
                              for img in glob.glob(X_dirpath)[:limit]]
         return cls
 
@@ -60,10 +60,19 @@ class BatchImgProcessor(object):
         self.to_modus('valid')
 
     def __len__(self):
-        buffer = rounding = 0
+        return int(self.full_lenght() / self.batchsize)
+
+    def full_lenght(self):
+        length = 0
         for p in self.preprocessors:
-            buffer += p.length(modus=self.modus, slow=self.slow)
-        return (buffer / self.batchsize)
+            length += p.length(modus=self.modus, slow=self.slow)
+        return length
+
+    def num_lost_datasets(self):
+        return self.full_lenght() - self.actual_full_length()
+
+    def actual_full_length(self):
+        return len(self) * self.batchsize
 
     def __iter__(self):
         return self

@@ -14,20 +14,22 @@ from network import Network, ConvPoolLayer, FullyConnectedLayer, \
 from preprocessor import BatchImgProcessor
 from metric import MetricRecorder
 
-def train(job_id, border, n_hidden_layer, eta):
+def train(job_id, minibatch_size):
     print "Job ID: %d" % job_id
+    eta = 0.01
+    border = 2
+    n_hidden_layer = 80
     metric_recorder = MetricRecorder(config_dir_path='.', job_id=job_id)
     C = {
         'X_dirpath' : '../../../data/train/*',
         'y_dirpath' : '../../../data/train_cleaned/',
-        'mini_batch_size' : 500,
-        'batchsize' : 500000,
-        'limit' : 30,
+        'batchsize' : 5000000,
+        'limit' : 20,
         'epochs' : 100,
         'patience' : 20000,
         'patience_increase' : 2,
         'improvement_threshold' : 0.995,
-        'validation_frequency' : 5000,
+        'validation_frequency' : 5,
         'lmbda' : 0.0,
         'training_size' : None,
         'validation_size' : None,
@@ -45,8 +47,8 @@ def train(job_id, border, n_hidden_layer, eta):
 
     training_data = BatchProcessor(modus='train', random=True)
     validation_data = BatchProcessor(modus='valid')
-    C['training_size'] = len(training_data)
-    C['validation_size'] = len(validation_data)
+    C['training_size'] = training_data.actual_full_length()
+    C['validation_size'] = validation_data.actual_full_length()
     print "Training size: %d" % C['training_size']
     print "Validation size: %d" % C['validation_size']
 
@@ -75,6 +77,4 @@ def train(job_id, border, n_hidden_layer, eta):
 def main(job_id, params):
     print 'Anything printed here will end up in the output directory for job #%d' % job_id
     print params
-    return train(job_id, params['border'][0],
-                 params['n_hidden_layer'][0],
-                 params['eta'][0])
+    return train(job_id, params['size'][0])

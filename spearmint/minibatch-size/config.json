@@ -1,0 +1,19 @@
+{
+    "language"        : "PYTHON",
+    "database" : {
+	"name" : "s0545881",
+	"address": "mongodb://s0545881:KNlZmiaNU@hadoop03.f4.htw-berlin.de:27020/s0545881"
+    },
+    "main-file"       : "train.py",
+    "experiment-name" : "minibatch-size",
+    "likelihood"      : "NOISELESS",
+    "variables" : {
+        "size" : {
+            "type" : "INT",
+            "size" : 1,
+            "min"  : 20,
+            "max"  : 1000
+        }
+    }
+}
+

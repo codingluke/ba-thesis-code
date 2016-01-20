@@ -6,22 +6,47 @@ import pdb
 from timeit import default_timer as timer
 from collections import OrderedDict
 from pymongo import MongoClient
-
+import pandas as pd
+import matplotlib.pyplot as plt
+plt.style.use('ggplot')
 
 class MetricReader(object):
 
     def __init__(self, config_dir_path=None):
-        self.options = self.__get_options(config_dir_path)
+        self.options = get_options(config_dir_path)
         self.connection, self.db, self.metrics, self.meta = self.__connect()
 
     def get_records(self, job_id=None):
-        return self.metrics.find({'job_id' : job_id})
+        cursor = self.metrics.find({'job_id' : job_id})
+        return pd.DataFrame(list(cursor))
 
     def get_best_records(self):
         None
 
     def get_best_job_id(self):
         None
+
+    def plot(self, job_id=None):
+        df = self.get_records(job_id=job_id)
+        fig, ax = plt.subplots(1, 1)
+        df[['cost', 'validation_accuracy', 'iteration']].plot(x='iteration',
+                                                                   y=['cost', 'validation_accuracy'],
+                                                                   title="Lernphase Job %d" % job_id,
+                                                                   ax=ax)
+        ymin, ymax = ax.get_ylim()
+        epochs = [df[df['epoch']==e]['iteration'].values[0]
+                  for e in xrange(df['epoch'].max())]
+        ax.vlines(x=epochs, ymin=[ymin], ymax=[ymax], label='epochs', linestyle='dotted')
+        min = df['validation_accuracy'].min()
+        min_val = df[df['validation_accuracy']==min]
+        min_x = min_val['iteration'].values[0]
+        min_y = min_val['validation_accuracy'].values[0]
+        xmin, xmax = ax.get_xlim()
+        ax.annotate('min at (%f)' % min_y, xy=(min_x, min_y), xytext=(xmax/2, ymax/2),
+                    arrowprops=dict(facecolor='black', shrink=0.05))
+        ax.plot(min_x, min_y, 'o', color="k")
+        ax.legend()
+        plt.show()
 
     def get_metadata(self):
         experiment_name = self.options['experiment-name']
@@ -41,7 +66,7 @@ class MetricRecorder(object):
 
     def __init__(self, job_id=None, config_dir_path=None):
         self.job_id = job_id
-        self.options = self.__get_options(config_dir_path)
+        self.options = get_options(config_dir_path)
         self.connection, self.db, self.metrics, self.meta = self.__connect()
         self.starttime = timer()
         self.endtime = 0
@@ -104,7 +129,7 @@ class MetricRecorder(object):
         meta = db.db['meta']
         return connection, db, metrics, meta
 
-def __get_options(self, dir_path):
+def get_options(dir_path):
     # Read in the config file
     expt_dir  = os.path.realpath(os.path.expanduser(dir_path))
     if not os.path.isdir(expt_dir):
