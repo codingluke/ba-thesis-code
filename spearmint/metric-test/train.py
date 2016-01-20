@@ -28,10 +28,11 @@ def train(job_id, border, n_hidden_layer, eta):
         'patience_increase' : 2,
         'improvement_threshold' : 0.995,
         'validation_frequency' : 5000,
-        'lmbda' : 0.0
+        'lmbda' : 0.0,
+        'training_size' : None,
+        'validation_size' : None,
+        'algorithm' : 'RMSProp'
     }
-    metric_recorder.add_experiment_metainfo(constants=C)
-    metric_recorder.start()
 
     BatchProcessor = BatchImgProcessor.load(
         X_dirpath='../../../data/train/*',
@@ -44,8 +45,13 @@ def train(job_id, border, n_hidden_layer, eta):
 
     training_data = BatchProcessor(modus='train', random=True)
     validation_data = BatchProcessor(modus='valid')
-    print "Training size: %d" % len(training_data)
-    print "Validation size: %d" % len(validation_data)
+    C['training_size'] = len(training_data)
+    C['validation_size'] = len(validation_data)
+    print "Training size: %d" % C['training_size']
+    print "Validation size: %d" % C['validation_size']
+
+    metric_recorder.add_experiment_metainfo(constants=C)
+    metric_recorder.start()
 
     n_in = (2*border+1)**2
     net = Network([FullyConnectedLayer(n_in=n_in, n_out=n_hidden_layer),
