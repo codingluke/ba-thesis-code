@@ -105,10 +105,14 @@ class Network():
         num_batches = len(data)/self.mini_batch_size
         return [predictions(j) for j in xrange(num_batches)]
 
+    def save(self, filename='model.pkl'):
+        f = open(filename, 'wb')
+        cPickle.dump(self, f)
+
     def SGD(self, training_data=None, epochs=10, mini_batch_size=100,
             eta=0.025, validation_data=None, lmbda=0.0, momentum=None,
             patience=40000, patience_increase=2, improvement_threshold=0.995,
-            validation_frequency=1, metric_recorder=None):
+            validation_frequency=1, metric_recorder=None, save_dir=None):
         """Train the network using mini-batch stochastic gradient descent."""
 
         if not validation_data or len(validation_data) < 1:
@@ -224,6 +228,10 @@ class Network():
                             epoch, validation_accuracy))
                         if validation_accuracy <= best_validation_accuracy:
                             print "Best validation accuracy to date."
+                            if save_dir:
+                                # save model
+                                self.save(save_dir + \
+                                          "%d_model.pkl" % iteration)
                             # increase patience
                             if (validation_accuracy < best_validation_accuracy*
                                 improvement_threshold):
