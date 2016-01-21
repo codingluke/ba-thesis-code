@@ -120,7 +120,7 @@ class ImgPreprocessor(object):
     def __init__(self, X_imgpath=None, y_dirpath=None, border=3,
                  train_stepover=8):
         assert X_imgpath != None and isinstance(X_imgpath, str)
-        assert y_dirpath != None and isinstance(y_dirpath, str)
+        # assert y_dirpath != None and isinstance(y_dirpath, str)
 
         self.X_img, self.y_img = self._load_images(X_imgpath, y_dirpath)
         self.X_imgpath = X_imgpath
@@ -159,9 +159,11 @@ class ImgPreprocessor(object):
 
     def _load_images(self, X_imgpath, y_dirpath):
         name = os.path.basename(X_imgpath)
-        y_imgpath = os.path.join(y_dirpath, name)
         X_img = PIL.Image.open(X_imgpath)
-        y_img = PIL.Image.open(y_imgpath)
+        y_img = None
+        if y_dirpath:
+          y_imgpath = os.path.join(y_dirpath, name)
+          y_img = PIL.Image.open(y_imgpath)
         return X_img, y_img
 
     def _get_y(self, modus=None):
