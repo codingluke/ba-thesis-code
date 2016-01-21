@@ -8,6 +8,7 @@ from collections import OrderedDict
 from pymongo import MongoClient
 import pandas as pd
 import matplotlib.pyplot as plt
+from pandas.tools.plotting import table
 plt.style.use('ggplot')
 
 class MetricReader(object):
@@ -26,6 +27,46 @@ class MetricReader(object):
     def get_best_job_id(self):
         None
 
+    def plot_epoches(self, job_id=None, first=False, title=None):
+        index = 0 if first else -1
+        if not title: title = "Lernphase Job %d" % job_id
+
+        df = self.get_records(job_id=job_id)
+        fig, ax = plt.subplots(1, 1)
+        epochs = [df[df['epoch']==e]['iteration'].values[index]
+                  for e in xrange(df['epoch'].max())]
+        df = df[df['iteration'].isin(epochs)].reset_index()
+        df[['cost', 'validation_accuracy']].plot(
+                y=['cost', 'validation_accuracy'],
+                title=title,
+                ax=ax)
+        seconds_epoche = int(df[df['iteration']==epochs[0]]['second'].values[0])
+
+        ymin, ymax = ax.get_ylim()
+        min = df['validation_accuracy'].min()
+        min_val = df[df['validation_accuracy']==min]
+        min_x = min_val.index.values[0]
+        min_y = min_val['validation_accuracy'].values[0]
+        xmin, xmax = ax.get_xlim()
+        ax.annotate('Minimum (%f)' % min_y, xy=(min_x, min_y), xytext=(xmax/2, ymax/2),
+                    arrowprops=dict(facecolor='black', shrink=0.05))
+        ax.plot(min_x, min_y, 'o', color="k")
+        ax.set_xlabel('Epochen')
+        l = ax.legend()
+        l.get_texts()[0].set_text(u"Trainings Kosten (cross-entropy)")
+        l.get_texts()[1].set_text(u"Validation Präzision (rmse)")
+        zeit = '%ds / Epoche' % seconds_epoche
+        tb = ax.table(cellText=[['RMSProp'], [0.01], [0.0], ['-'] ,[2], [1000],
+                           [500000], [3000000], [500000], [zeit]],
+                 rowLabels=['Algorithmus', 'Lernrate', 'L2', 'Dropout',
+                            'Rahmen', 'Minibatch', 'Batch', 'Training',
+                            'Validation', 'Zeit'],
+                 colWidths=[0.2, 0.4], cellLoc='left',
+                 loc=None, bbox=[1.25, 0.0, 0.3, 1.0])
+        tb.scale(1.5, 1.5)
+        plt.show()
+
+
     def plot(self, job_id=None):
         df = self.get_records(job_id=job_id)
         fig, ax = plt.subplots(1, 1)
@@ -34,7 +75,7 @@ class MetricReader(object):
                                                                    title="Lernphase Job %d" % job_id,
                                                                    ax=ax)
         ymin, ymax = ax.get_ylim()
-        epochs = [df[df['epoch']==e]['iteration'].values[0]
+        epochs = [df[df['epoch']==e]['iteration'].values[-1]
                   for e in xrange(df['epoch'].max())]
         ax.vlines(x=epochs, ymin=[ymin], ymax=[ymax], label='epochs', linestyle='dotted')
         min = df['validation_accuracy'].min()
