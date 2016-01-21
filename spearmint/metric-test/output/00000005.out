@@ -1,0 +1,267 @@
+Job launching after 0.15 seconds in submission.
+Running python job.
+Changed into dir /home/05/45881/ba-thesis-code/spearmint/metric-test
+Importing train.py
+Using gpu device 0: Tesla K20m
+Running train.main()
+
+mongodb://s0545881:KNlZmiaNU@hadoop03.f4.htw-berlin.de:27020/s0545881
+s0545881
+
+Anything printed here will end up in the output directory for job #5
+{u'n_hidden_layer': array([200]), u'eta': array([ 0.01]), u'border': array([2])}
+Job ID: 5
+Training size: 9
+Validation size: 2
+Epoch 0: validation accuracy 0.00318551110104
+Best validation accuracy to date.
+iter 4999, patience 20000
+iter 9000
+patience 20000
+Epoch 1: validation accuracy 0.00224978197366
+Best validation accuracy to date.
+iter 9999, patience 20000
+Epoch 1: validation accuracy 0.00187692430336
+Best validation accuracy to date.
+iter 14999, patience 29998
+iter 18000
+patience 29998
+Epoch 2: validation accuracy 0.00168789934833
+Best validation accuracy to date.
+iter 19999, patience 39998
+Epoch 2: validation accuracy 0.00156685023103
+Best validation accuracy to date.
+iter 24999, patience 49998
+iter 27000
+patience 49998
+Epoch 3: validation accuracy 0.00147188676056
+Best validation accuracy to date.
+iter 29999, patience 59998
+Epoch 3: validation accuracy 0.00139609642792
+Best validation accuracy to date.
+iter 34999, patience 69998
+iter 36000
+patience 69998
+Epoch 4: validation accuracy 0.00134066899773
+Best validation accuracy to date.
+iter 39999, patience 79998
+Epoch 4: validation accuracy 0.00129828974605
+Best validation accuracy to date.
+iter 44999, patience 89998
+iter 45000
+patience 89998
+Epoch 5: validation accuracy 0.00126380939037
+Best validation accuracy to date.
+iter 49999, patience 99998
+iter 54000
+patience 99998
+Epoch 6: validation accuracy 0.00123516435269
+Best validation accuracy to date.
+iter 54999, patience 109998
+Epoch 6: validation accuracy 0.00121153378859
+Best validation accuracy to date.
+iter 59999, patience 119998
+iter 63000
+patience 119998
+Epoch 7: validation accuracy 0.00119208765682
+Best validation accuracy to date.
+iter 64999, patience 129998
+Epoch 7: validation accuracy 0.00117554469034
+Best validation accuracy to date.
+iter 69999, patience 139998
+iter 72000
+patience 139998
+Epoch 8: validation accuracy 0.00116069160867
+Best validation accuracy to date.
+iter 74999, patience 149998
+Epoch 8: validation accuracy 0.00114679546095
+Best validation accuracy to date.
+iter 79999, patience 159998
+iter 81000
+patience 159998
+Epoch 9: validation accuracy 0.00113354669884
+Best validation accuracy to date.
+iter 84999, patience 169998
+Epoch 9: validation accuracy 0.00112083787099
+Best validation accuracy to date.
+iter 89999, patience 179998
+iter 90000
+patience 179998
+Epoch 10: validation accuracy 0.0011086424347
+Best validation accuracy to date.
+iter 94999, patience 189998
+iter 99000
+patience 189998
+Epoch 11: validation accuracy 0.00109697203152
+Best validation accuracy to date.
+iter 99999, patience 199998
+Epoch 11: validation accuracy 0.00108587241266
+Best validation accuracy to date.
+iter 104999, patience 209998
+iter 108000
+patience 209998
+Epoch 12: validation accuracy 0.00107539456803
+Best validation accuracy to date.
+iter 109999, patience 219998
+Epoch 12: validation accuracy 0.00106555293314
+Best validation accuracy to date.
+iter 114999, patience 229998
+iter 117000
+patience 229998
+Epoch 13: validation accuracy 0.00105631095357
+Best validation accuracy to date.
+iter 119999, patience 239998
+Epoch 13: validation accuracy 0.00104760972317
+Best validation accuracy to date.
+iter 124999, patience 249998
+iter 126000
+patience 249998
+Epoch 14: validation accuracy 0.0010393965058
+Best validation accuracy to date.
+iter 129999, patience 259998
+Epoch 14: validation accuracy 0.00103163684253
+Best validation accuracy to date.
+iter 134999, patience 269998
+iter 135000
+patience 269998
+Epoch 15: validation accuracy 0.00102430849802
+Best validation accuracy to date.
+iter 139999, patience 279998
+iter 144000
+patience 279998
+Epoch 16: validation accuracy 0.00101739622187
+Best validation accuracy to date.
+iter 144999, patience 289998
+Epoch 16: validation accuracy 0.00101088313386
+Best validation accuracy to date.
+iter 149999, patience 299998
+iter 153000
+patience 299998
+Epoch 17: validation accuracy 0.00100475072395
+Best validation accuracy to date.
+iter 154999, patience 309998
+EpoGot result 0.000873622659128
+Completed successfully in 2730.65 seconds. [{u'main': 0.0008736226591281593}]
+ch 17: validation accuracy 0.000998973264359
+Best validation accuracy to date.
+iter 159999, patience 319998
+iter 162000
+patience 319998
+Epoch 18: validation accuracy 0.000993520021439
+Best validation accuracy to date.
+iter 164999, patience 329998
+Epoch 18: validation accuracy 0.000988354091533
+Best validation accuracy to date.
+iter 169999, patience 339998
+iter 171000
+patience 339998
+Epoch 19: validation accuracy 0.00098343740683
+Best validation accuracy to date.
+Epoch 19: validation accuracy 0.000978731084615
+Best validation accuracy to date.
+iter 180000
+patience 339998
+Epoch 20: validation accuracy 0.000974199909251
+Best validation accuracy to date.
+iter 189000
+patience 339998
+Epoch 21: validation accuracy 0.000969812972471
+Best validation accuracy to date.
+Epoch 21: validation accuracy 0.000965543731581
+Best validation accuracy to date.
+iter 198000
+patience 339998
+Epoch 22: validation accuracy 0.000961371464655
+Best validation accuracy to date.
+Epoch 22: validation accuracy 0.000957278709393
+Best validation accuracy to date.
+iter 207000
+patience 339998
+Epoch 23: validation accuracy 0.000953254231717
+Best validation accuracy to date.
+Epoch 23: validation accuracy 0.000949289067648
+Best validation accuracy to date.
+iter 216000
+patience 339998
+Epoch 24: validation accuracy 0.000945378444158
+Best validation accuracy to date.
+Epoch 24: validation accuracy 0.000941519916523
+Best validation accuracy to date.
+iter 225000
+patience 339998
+Epoch 25: validation accuracy 0.000937713484745
+Best validation accuracy to date.
+iter 234000
+patience 339998
+Epoch 26: validation accuracy 0.000933960895054
+Best validation accuracy to date.
+Epoch 26: validation accuracy 0.000930264475755
+Best validation accuracy to date.
+iter 243000
+patience 339998
+Epoch 27: validation accuracy 0.000926626438741
+Best validation accuracy to date.
+Epoch 27: validation accuracy 0.000923052197322
+Best validation accuracy to date.
+iter 252000
+patience 339998
+Epoch 28: validation accuracy 0.000919543905184
+Best validation accuracy to date.
+Epoch 28: validation accuracy 0.000916106335353
+Best validation accuracy to date.
+iter 261000
+patience 339998
+Epoch 29: validation accuracy 0.000912742281798
+Best validation accuracy to date.
+Epoch 29: validation accuracy 0.000909455062356
+Best validation accuracy to date.
+iter 270000
+patience 339998
+Epoch 30: validation accuracy 0.000906246888917
+Best validation accuracy to date.
+iter 279000
+patience 339998
+Epoch 31: validation accuracy 0.000903118459973
+Best validation accuracy to date.
+Epoch 31: validation accuracy 0.000900069950148
+Best validation accuracy to date.
+iter 288000
+patience 339998
+Epoch 32: validation accuracy 0.000897101126611
+Best validation accuracy to date.
+Epoch 32: validation accuracy 0.000894210883416
+Best validation accuracy to date.
+iter 297000
+patience 339998
+Epoch 33: validation accuracy 0.000891397183295
+Best validation accuracy to date.
+Epoch 33: validation accuracy 0.000888656591997
+Best validation accuracy to date.
+iter 306000
+patience 339998
+Epoch 34: validation accuracy 0.000885987421498
+Best validation accuracy to date.
+Epoch 34: validation accuracy 0.000883387227077
+Best validation accuracy to date.
+iter 315000
+patience 339998
+Epoch 35: validation accuracy 0.000880852865521
+Best validation accuracy to date.
+iter 324000
+patience 339998
+Epoch 36: validation accuracy 0.000878382299561
+Best validation accuracy to date.
+Epoch 36: validation accuracy 0.000875973491929
+Best validation accuracy to date.
+iter 333000
+patience 339998
+Epoch 37: validation accuracy 0.000873622659128
+Best validation accuracy to date.
+iter 339998
+patience 339998
+break
+iter 339998
+patience 339998
+Finished training network.
+Time = 2728.561889
+Result = 0.000874

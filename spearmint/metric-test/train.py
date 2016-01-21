@@ -21,7 +21,7 @@ def train(job_id, border, n_hidden_layer, eta):
         'X_dirpath' : '../../../data/train/*',
         'y_dirpath' : '../../../data/train_cleaned/',
         'mini_batch_size' : 500,
-        'batchsize' : 5000000,
+        'batchsize' : 500000,
         'limit' : 30,
         'epochs' : 100,
         'patience' : 20000,
