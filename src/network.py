@@ -283,56 +283,123 @@ class Network():
 
 #### Define layer types
 
-class ConvPoolLayer():
-    """Used to create a combination of a convolutional and a max-pooling
-    layer.  A more sophisticated implementation would separate the
-    two, but for our purposes we'll always use them together, and it
-    simplifies the code, so it makes sense to combine them.
+class AutoencoderLayer():
 
-    """
+    def __init__(self, n_in=None, n_hidden=None, w=None, b_hid=None,
+                 b_vis=None, activation_fn=sigmoid, p_dropout=0.0,
+                 representative_layer=None):
+        self.n_in = n_in
+        self.n_hidden = n_hidden
+        self.activation_fn = activation_fn
+        self.p_dropout = p_dropout
 
-    def __init__(self, filter_shape, image_shape, poolsize=(2, 2),
-                 activation_fn=sigmoid):
-        """`filter_shape` is a tuple of length 4, whose entries are the number
-        of filters, the number of input feature maps, the filter height, and the
-        filter width.
+        if not w:
+            w = theano.shared(
+                np.asarray(
+                    np.random.uniform(
+                        low=-np.sqrt(6. / (n_in + n_hidden)),
+                        high=np.sqrt(6. / (n_in + n_hidden)),
+                        size=(n_in, n_hidden)
+                    ),
+                    dtype=theano.config.floatX),
+                name='w', borrow=True)
 
-        `image_shape` is a tuple of length 4, whose entries are the
-        mini-batch size, the number of input feature maps, the image
-        height, and the image width.
+        if not b_vis:
+            b_vis = theano.shared(
+                np.asarray(np.random.normal(loc=0.0, scale=1.0, size=(n_in,)),
+                           dtype=theano.config.floatX),
+                name='bvis', borrow=True)
 
-        `poolsize` is a tuple of length 2, whose entries are the y and
-        x pooling sizes.
+        if not b_hid:
+            b_hid = theano.shared(
+                np.asarray(np.random.normal(loc=0.0, scale=1.0,
+                                            size=(n_hidden,)),
+                           dtype=theano.config.floatX),
+                name='bhid', borrow=True)
+        b = theano.shared(
+            np.asarray(np.random.normal(loc=0.0, scale=1.0,
+                                        size=(n_hidden,)),
+                       dtype=theano.config.floatX),
+            name='b', borrow=True)
 
-        """
-        self.filter_shape = filter_shape
-        self.image_shape = image_shape
-        self.poolsize = poolsize
-        self.activation_fn=activation_fn
-       # initialize weights and biases
-        n_out = (filter_shape[0]*np.prod(filter_shape[2:])/np.prod(poolsize))
-        self.w = theano.shared(
-            np.asarray(
-                np.random.normal(loc=0, scale=np.sqrt(1.0/n_out), size=filter_shape),
-                dtype=theano.config.floatX),
-            borrow=True)
-        self.b = theano.shared(
-            np.asarray(
-                np.random.normal(loc=0, scale=1.0, size=(filter_shape[0],)),
-                dtype=theano.config.floatX),
-            borrow=True)
+        self.w = w # shared weights
+        self.b = b # bias for normal layer
+        self.b_hid = b_hid # hidden bias for AE
+        self.b_prime = b_vis # visible bias for AE
+        self.w_prime = self.w.T # Hidden weights for AE
+
+        self._params = [self.w, self.b_hid, self.b_prime]
         self.params = [self.w, self.b]
 
     def set_inpt(self, inpt, inpt_dropout, mini_batch_size):
-        self.inpt = inpt.reshape(self.image_shape)
-        conv_out = conv.conv2d(
-            input=self.inpt, filters=self.w, filter_shape=self.filter_shape,
-            image_shape=self.image_shape)
-        pooled_out = downsample.max_pool_2d(
-            input=conv_out, ds=self.poolsize, ignore_border=True)
+        self.inpt = inpt.reshape((mini_batch_size, self.n_in))
         self.output = self.activation_fn(
-            pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
-        self.output_dropout = self.output # no dropout in the convolutional layers
+            (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
+        self.inpt_dropout = dropout_layer(
+            inpt_dropout.reshape((mini_batch_size, self.n_in)), self.p_dropout)
+        self.output_dropout = self.activation_fn(
+            T.dot(self.inpt_dropout, self.w) + self.b)
+
+    def get_hidde_values(self, inpt):
+        return self.activation_fn(T.dot(inpt, self.w) + self.b_hid)
+
+    def get_reconstructed_input(self, hidden):
+        return self.activation_fn(T.dot(hidden, self.w_prime) + self.b_prime)
+
+    def get_cost_updates(self, corruption_level=None, eta=None):
+        y = self.get_hidde_values(self.inpt)
+        z = self.get_reconstructed_input(y)
+        cost = T.nnet.binary_crossentropy(z, self.inpt).mean()
+        grads = T.grad(cost=cost, wrt=self._params)
+
+        # RBMSProp
+        rho = 0.9
+        epsilon = 1e-6
+        updates = []
+        for p, g in zip(self._params, grads):
+            acc = theano.shared(p.get_value() * 0.,
+                                 broadcastable=p.broadcastable)
+            acc_new = rho * acc + (1 - rho) * g ** 2
+            gradient_scaling = T.sqrt(acc_new + epsilon)
+            g = g / gradient_scaling
+            updates.append((acc, acc_new))
+            updates.append((p, T.cast(p - eta * g, theano.config.floatX)))
+
+        return (cost, updates)
+
+    def train(self, training_data=None, batch_size=200, eta=0.25, epochs=1):
+        index = T.lscalar() # Minibatch index
+        x = T.matrix("x") # Inputdata
+
+        self.set_inpt(x, x, batch_size)
+        cost, updates = self.get_cost_updates(eta=eta)
+
+        # Prepare Theano shared variables with the shape and type of
+        # The train, valid batches.
+        train_x_zeros, _ = training_data.next()
+        training_x = tshared(train_x_zeros)
+        training_data.reset()
+
+        # compute number of minibatches for training, validation and testing
+        num_training_batches = size(training_x) / batch_size
+
+        train_mb = theano.function(
+            [index],
+            cost,
+            updates=updates,
+            givens={
+                x: training_x[index * batch_size: (index + 1) * batch_size]
+            }
+        )
+
+        for epoch in xrange(epochs):
+            c = []
+            for train_x, _ in training_data:
+                training_x = tshared(train_x)
+                for batch_index in xrange(num_training_batches):
+                    c.append(train_mb(batch_index))
+
+            print "Trainig epoch %d, cost %f" % (epoch, np.mean(c))
 
 class FullyConnectedLayer():
 

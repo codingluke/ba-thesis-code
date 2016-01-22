@@ -39,7 +39,8 @@ class MetricReader(object):
         df[['cost', 'validation_accuracy']].plot(
                 y=['cost', 'validation_accuracy'],
                 title=title,
-                ax=ax)
+                ax=ax,
+                subplots=True)
         seconds_epoche = int(df[df['iteration']==epochs[0]]['second'].values[0])
 
         ymin, ymax = ax.get_ylim()
@@ -52,9 +53,9 @@ class MetricReader(object):
                     arrowprops=dict(facecolor='black', shrink=0.05))
         ax.plot(min_x, min_y, 'o', color="k")
         ax.set_xlabel('Epochen')
-        l = ax.legend()
-        l.get_texts()[0].set_text(u"Trainings Kosten (cross-entropy)")
-        l.get_texts()[1].set_text(u"Validation Präzision (rmse)")
+        # l = ax.legend()
+        # l.get_texts()[0].set_text(u"Trainings Kosten (cross-entropy)")
+        # l.get_texts()[1].set_text(u"Validation Präzision (rmse)")
         zeit = '%ds / Epoche' % seconds_epoche
         tb = ax.table(cellText=[['RMSProp'], [0.01], [0.0], ['-'] ,[2], [1000],
                            [500000], [3000000], [500000], [zeit]],
@@ -71,9 +72,10 @@ class MetricReader(object):
         df = self.get_records(job_id=job_id)
         fig, ax = plt.subplots(1, 1)
         df[['cost', 'validation_accuracy', 'iteration']].plot(x='iteration',
-                                                                   y=['cost', 'validation_accuracy'],
-                                                                   title="Lernphase Job %d" % job_id,
-                                                                   ax=ax)
+                                                              y=['cost', 'validation_accuracy'],
+                                                              title="Lernphase Job %d" % job_id,
+                                                              ax=ax,
+                                                              subplots=True)
         ymin, ymax = ax.get_ylim()
         epochs = [df[df['epoch']==e]['iteration'].values[-1]
                   for e in xrange(df['epoch'].max())]
