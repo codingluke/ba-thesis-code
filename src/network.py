@@ -156,7 +156,7 @@ class Network():
         # compute number of minibatches for training, validation and testing
         num_training_batches = size(training_x) / mini_batch_size
         tota_num_training_batches = num_training_batches * len(training_data)
-        num_validation_batches = size(validation_x) / tota_num_training_batches
+        num_validation_batches = size(validation_x) / mini_batch_size
 
         # define the (regularized) cost function,
         # symbolic gradients, and updates
@@ -400,6 +400,32 @@ class AutoencoderLayer():
                     c.append(train_mb(batch_index))
 
             print "Trainig epoch %d, cost %f" % (epoch, np.mean(c))
+
+    def __getstate__(self):
+        return(self.n_in, self.n_hidden, self.activation_fn, \
+               self.p_dropout, self.inpt, self.output, self.inpt_dropout, \
+               self.output_dropout, self.w, self.b, self.b_hid, self.w_prime, \
+               self.b_prime)
+
+    def __setstate__(self, state):
+        n_in, n_hidden, activation_fn,  p_dropout, inpt, output, inpt_dropout, \
+               output_dropout, w, b, b_hid, w_prime,  b_prime = state
+
+        self.n_in = n_in
+        self.n_hidden = n_hidden
+        self.activation_fn = activation_fn
+        self.p_dropout = p_dropout
+        self.inpt = inpt
+        self.output = output
+        self.inpt_dropout = inpt_dropout
+        self.output_dropout = output_dropout
+        self.w = w
+        self.b = b
+        self.b_hid = b_hid
+        self.w_prime = w_prime
+        self.b_prime = b_prime
+        self.params = [self.w, self.b]
+        self._params = [self.w, self.b_hid, self.b_prime]
 
 class FullyConnectedLayer():
 
