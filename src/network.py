@@ -283,61 +283,11 @@ class Network():
 
 #### Define layer types
 
-class ConvPoolLayer():
-    """Used to create a combination of a convolutional and a max-pooling
-    layer.  A more sophisticated implementation would separate the
-    two, but for our purposes we'll always use them together, and it
-    simplifies the code, so it makes sense to combine them.
-
-    """
-
-    def __init__(self, filter_shape, image_shape, poolsize=(2, 2),
-                 activation_fn=sigmoid):
-        """`filter_shape` is a tuple of length 4, whose entries are the number
-        of filters, the number of input feature maps, the filter height, and the
-        filter width.
-
-        `image_shape` is a tuple of length 4, whose entries are the
-        mini-batch size, the number of input feature maps, the image
-        height, and the image width.
-
-        `poolsize` is a tuple of length 2, whose entries are the y and
-        x pooling sizes.
-
-        """
-        self.filter_shape = filter_shape
-        self.image_shape = image_shape
-        self.poolsize = poolsize
-        self.activation_fn=activation_fn
-       # initialize weights and biases
-        n_out = (filter_shape[0]*np.prod(filter_shape[2:])/np.prod(poolsize))
-        self.w = theano.shared(
-            np.asarray(
-                np.random.normal(loc=0, scale=np.sqrt(1.0/n_out), size=filter_shape),
-                dtype=theano.config.floatX),
-            borrow=True)
-        self.b = theano.shared(
-            np.asarray(
-                np.random.normal(loc=0, scale=1.0, size=(filter_shape[0],)),
-                dtype=theano.config.floatX),
-            borrow=True)
-        self.params = [self.w, self.b]
-
-    def set_inpt(self, inpt, inpt_dropout, mini_batch_size):
-        self.inpt = inpt.reshape(self.image_shape)
-        conv_out = conv.conv2d(
-            input=self.inpt, filters=self.w, filter_shape=self.filter_shape,
-            image_shape=self.image_shape)
-        pooled_out = downsample.max_pool_2d(
-            input=conv_out, ds=self.poolsize, ignore_border=True)
-        self.output = self.activation_fn(
-            pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
-        self.output_dropout = self.output # no dropout in the convolutional layers
-
 class AutoencoderLayer():
 
     def __init__(self, n_in=None, n_hidden=None, w=None, b_hid=None,
-                 b_vis=None, activation_fn=sigmoid, p_dropout=0.0):
+                 b_vis=None, activation_fn=sigmoid, p_dropout=0.0,
+                 representative_layer=None):
         self.n_in = n_in
         self.n_hidden = n_hidden
         self.activation_fn = activation_fn
@@ -366,26 +316,32 @@ class AutoencoderLayer():
                                             size=(n_hidden,)),
                            dtype=theano.config.floatX),
                 name='bhid', borrow=True)
+        b = theano.shared(
+            np.asarray(np.random.normal(loc=0.0, scale=1.0,
+                                        size=(n_hidden,)),
+                       dtype=theano.config.floatX),
+            name='b', borrow=True)
 
-        self.w = w
-        self.b = b_hid
-        self.b_prime = b_vis
-        self.w_prime = self.w.T
+        self.w = w # shared weights
+        self.b = b # bias for normal layer
+        self.b_hid = b_hid # hidden bias for AE
+        self.b_prime = b_vis # visible bias for AE
+        self.w_prime = self.w.T # Hidden weights for AE
 
-        self.params = [self.w, self.b, self.b_prime]
+        self._params = [self.w, self.b_hid, self.b_prime]
+        self.params = [self.w, self.b]
 
     def set_inpt(self, inpt, inpt_dropout, mini_batch_size):
         self.inpt = inpt.reshape((mini_batch_size, self.n_in))
-        # self.output = self.activation_fn(
-            # (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
+        self.output = self.activation_fn(
+            (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
         self.inpt_dropout = dropout_layer(
             inpt_dropout.reshape((mini_batch_size, self.n_in)), self.p_dropout)
-        # self.output_dropout = self.activation_fn(
-            # T.dot(self.inpt_dropout, self.w) + self.b)
-        # self.y_out = T.argmax(self.output, axis=1)
+        self.output_dropout = self.activation_fn(
+            T.dot(self.inpt_dropout, self.w) + self.b)
 
     def get_hidde_values(self, inpt):
-        return self.activation_fn(T.dot(inpt, self.w) + self.b)
+        return self.activation_fn(T.dot(inpt, self.w) + self.b_hid)
 
     def get_reconstructed_input(self, hidden):
         return self.activation_fn(T.dot(hidden, self.w_prime) + self.b_prime)
@@ -394,14 +350,13 @@ class AutoencoderLayer():
         y = self.get_hidde_values(self.inpt)
         z = self.get_reconstructed_input(y)
         cost = T.nnet.binary_crossentropy(z, self.inpt).mean()
-        grads = T.grad(cost=cost, wrt=self.params)
-        print "kukuk"
+        grads = T.grad(cost=cost, wrt=self._params)
 
         # RBMSProp
         rho = 0.9
         epsilon = 1e-6
         updates = []
-        for p, g in zip(self.params, grads):
+        for p, g in zip(self._params, grads):
             acc = theano.shared(p.get_value() * 0.,
                                  broadcastable=p.broadcastable)
             acc_new = rho * acc + (1 - rho) * g ** 2
