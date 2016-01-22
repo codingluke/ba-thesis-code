@@ -361,19 +361,20 @@ class FullyConnectedLayer():
         self.inpt = inpt.reshape((mini_batch_size, self.n_in))
         self.output = self.activation_fn(
             (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
-        self.y_out = T.argmax(self.output, axis=1)
         self.inpt_dropout = dropout_layer(
             inpt_dropout.reshape((mini_batch_size, self.n_in)), self.p_dropout)
         self.output_dropout = self.activation_fn(
             T.dot(self.inpt_dropout, self.w) + self.b)
+        self.y_out = T.argmax(self.output, axis=1)
 
     def accuracy(self, y):
         "Return the accuracy for the mini-batch."
         return T.sqr(self.output - y).mean()
 
     def cost(self, net):
-        cost = T.sqr(self.output - net.y).mean()
-        #cost = T.nnet.binary_crossentropy(self.output, net.y).mean()
+        # cost = T.sqr(self.output - net.y).mean()
+        # cost = T.sqr(self.output_dropout - net.y).mean()
+        cost = T.nnet.binary_crossentropy(self.output_dropout, net.y).mean()
         return cost
 
     def __getstate__(self):

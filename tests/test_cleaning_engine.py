@@ -36,6 +36,3 @@ class TestCleaningEngine(unittest.TestCase):
         self.assertTrue(metadata)
         self.assertFalse(no_metadata)
 
-
-
-
