@@ -16,16 +16,19 @@ import config
 class TestCleaningEngine(unittest.TestCase):
 
     def test_clean(self):
-        img = '../data/test/130.png'
+        img = '../data/test/1.png'
         PIL.Image.open(img).show()
 
-        e = engine.CleaningEngine('./tests/data/models/72000_model.pkl')
-        e.clean_and_show(img)
+        # e = engine.CleaningEngine('./tests/data/models/72000_model.pkl')
+        # e.clean_and_show(img)
 
-        e = engine.CleaningEngine('./tests/data/models/162000_model.pkl')
-        e.clean_and_show(img)
+        # e = engine.CleaningEngine('./tests/data/models/162000_model.pkl')
+        # e.clean_and_show(img)
 
         e = engine.CleaningEngine('./tests/data/models/342000_model.pkl')
+        e.clean_and_show(img)
+
+        e = engine.CleaningEngine('./tests/data/models/13_72000_model.pkl')
         e.clean_and_show(img)
 
     def test_metadata(self):
