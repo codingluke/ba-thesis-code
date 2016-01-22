@@ -16,17 +16,17 @@ from metric import MetricRecorder
 
 def train(job_id, minibatch_size):
     print "Job ID: %d" % job_id
-    eta = 0.01
+    eta = 0.025 # 1-7 0.01
     border = 2
     n_hidden_layer = 80
     metric_recorder = MetricRecorder(config_dir_path='.', job_id=job_id)
     C = {
         'X_dirpath' : '../../../data/train/*',
         'y_dirpath' : '../../../data/train_cleaned/',
-        'batchsize' : 5000000,
+        'batchsize' : 500000,
         'limit' : 20,
         'epochs' : 100,
-        'patience' : 20000,
+        'patience' : 70000,
         'patience_increase' : 2,
         'improvement_threshold' : 0.995,
         'validation_frequency' : 5,
@@ -58,16 +58,16 @@ def train(job_id, minibatch_size):
     n_in = (2*border+1)**2
     net = Network([FullyConnectedLayer(n_in=n_in, n_out=n_hidden_layer),
                    FullyConnectedLayer(n_in=n_hidden_layer, n_out=1)],
-                  C['mini_batch_size'])
+                  minibatch_size)
 
     result = net.SGD(training_data=training_data, epochs=C['epochs'],
-                     mini_batch_size=C['mini_batch_size'], eta=eta,
+                     mini_batch_size=minibatch_size, eta=eta,
                      validation_data=validation_data, lmbda=C['lmbda'],
                      momentum=None, patience=C['patience'],
                      patience_increase=C['patience_increase'],
                      improvement_threshold=C['improvement_threshold'],
                      validation_frequency=C['validation_frequency'],
-                     metric_recorder=metric_recorder)
+                     metric_recorder=metric_recorder, save_dir='./model/%d_' % job_id)
 
     print 'Time = %f' % metric_recorder.stop()
     print 'Result = %f' % result
@@ -78,3 +78,10 @@ def main(job_id, params):
     print 'Anything printed here will end up in the output directory for job #%d' % job_id
     print params
     return train(job_id, params['size'][0])
+
+if __name__ == '__main__': 
+    job_id = 12 # job 8 strange... , ab 12 mit metadata im model
+    for i in [20, 50, 100, 200, 500, 1000, 1500]:
+        main(job_id, {'size' : [i]})
+        job_id += 1
+    #main(7, {'size' : [1500]})
