@@ -56,7 +56,7 @@ net.SGD(training_data=training_data, epochs=100,
         validation_data=validation_data, lmbda=0.0,
         momentum=None, patience=20000, patience_increase=2,
         improvement_threshold=0.995, validation_frequency=2,
-        save_dir='./model/')
+        save_dir='./model/meta_')
 end = timer()
 print "Zeit : %d" % (end-start)
 

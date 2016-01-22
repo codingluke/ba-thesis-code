@@ -74,13 +74,18 @@ class Network():
                            self.mini_batch_size)
         self.output = self.layers[-1].output
         self.output_dropout = self.layers[-1].output_dropout
+        self.meta = {}
 
     def __getstate__(self):
         return (self.layers, self.mini_batch_size,
-                self.x, self.y, self.params)
+                self.x, self.y, self.params, self.meta)
 
     def __setstate__(self, state):
-        layers, mini_batch_size, x, y, params = state
+        layers = mini_batch_size = x = y = params = meta = None
+        if len(state) == 5:
+          layers, mini_batch_size, x, y, params = state
+        else:
+          layers, mini_batch_size, x, y, params, meta = state
         self.layers = layers
         self.mini_batch_size = mini_batch_size
         self.x = x
@@ -88,6 +93,7 @@ class Network():
         self.params = params
         self.output = self.layers[-1].output
         self.output_dropout = self.layers[-1].output_dropout
+        if meta: self.meta = meta
 
     def predict(self, data):
         shared_data = theano.shared(
@@ -117,6 +123,24 @@ class Network():
 
         if not validation_data or len(validation_data) < 1:
             raise Exception("no validation data")
+
+        # Save metainfo for later
+        self.meta = {
+          'mini_batch_size' : mini_batch_size,
+          'eta' : eta,
+          'lmbda' : lmbda,
+          'momentum' : momentum,
+          'patience' : patience,
+          'patience_increase' : patience_increase,
+          'improvement_threshold' : 0.995,
+          'validation_frequency' : validation_frequency,
+          'n_hidden' : self.layers[1].n_in,
+          'n_input' : self.layers[0].n_in,
+          'training_data' : len(training_data),
+          'validation_data' : len(validation_data),
+          'algorithm' : 'RBMSProp'
+        }
+
 
         # Prepare Theano shared variables with the shape and type of
         # The train, valid batches.
@@ -230,6 +254,9 @@ class Network():
                             print "Best validation accuracy to date."
                             if save_dir:
                                 # save model
+                                self.meta['iteration'] = iteration
+                                self.meta['accuracy'] = validation_accuracy
+                                self.meta['cost'] = cost
                                 self.save(save_dir + \
                                           "%d_model.pkl" % iteration)
                             # increase patience

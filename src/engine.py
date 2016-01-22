@@ -7,10 +7,10 @@ from preprocessor import ImgPreprocessor
 
 class CleaningEngine(object):
 
-    def __init__(self, model_path=None, border=None):
+    def __init__(self, model_path=None):
         f = open(model_path, 'rb')
         self.net = cPickle.load(f)
-        self.border = border
+        self.border = self.__calc_border(self.net.layers[0])
 
     def clean(self, img_path=None):
         p = ImgPreprocessor(X_imgpath=img_path, border=self.border)
@@ -28,4 +28,13 @@ class CleaningEngine(object):
     def clean_and_save(self, img_path=None, savepath=None):
         img = self.clean(img_path)
         img.convert('L').save(savepath, 'PNG')
+
+    def metadata(self):
+      try:
+        return self.net.meta
+      except:
+        return None
+
+    def __calc_border(self, layer):
+      return int((np.sqrt(layer.n_in) - 1) * 0.5)
 
