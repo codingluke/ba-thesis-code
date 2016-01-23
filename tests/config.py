@@ -1,2 +1,2 @@
-benchmark = False
-mongodb = True
+slow = False
+mongodb = False

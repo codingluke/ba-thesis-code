@@ -46,7 +46,7 @@ class TestBatchImgProcessor(unittest.TestCase):
     test4 = [(X,y) for X, y in self.train_batch]
     test5 = [(X,y) for X, y in self.train_batch]
 
-  @unittest.skipUnless(config.benchmark, 'slow test')
+  @unittest.skipUnless(config.slow, 'slow test')
   def test_bench(self):
     BP = BatchImgProcessor.load(
         X_dirpath='../data/train/*',

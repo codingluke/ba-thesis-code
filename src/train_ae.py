@@ -45,8 +45,8 @@ mini_batch_size = 200
 
 
 net = Network([
-        AutoencoderLayer(n_in=n_in, n_hidden=n_in-10),
-        FullyConnectedLayer(n_in=n_in-10, n_out=80),
+        AutoencoderLayer(n_in=n_in, n_hidden=n_in-5),
+        FullyConnectedLayer(n_in=n_in-5, n_out=80),
         FullyConnectedLayer(n_in=80, n_out=1),
     ], mini_batch_size)
 

@@ -115,6 +115,15 @@ class Network():
         f = open(filename, 'wb')
         cPickle.dump(self, f)
 
+    def pretrain_autoencoders(self, training_data=None, batch_size=200,
+                              eta=0.25, epochs=1):
+        aes = [layer
+               for layer in self.layers
+               if isinstance(layer, AutoencoderLayer)]
+        for index, ae in enumerate(aes):
+            ae.train(training_data=training_data, batch_size=batch_size,
+                     eta=eta, epochs=epochs, ff_layers=aes[:index])
+
     def SGD(self, training_data=None, epochs=10, mini_batch_size=100,
             eta=0.025, validation_data=None, lmbda=0.0, momentum=None,
             patience=40000, patience_increase=2, improvement_threshold=0.995,
@@ -316,19 +325,18 @@ class AutoencoderLayer():
                                             size=(n_hidden,)),
                            dtype=theano.config.floatX),
                 name='bhid', borrow=True)
-        b = theano.shared(
-            np.asarray(np.random.normal(loc=0.0, scale=1.0,
-                                        size=(n_hidden,)),
-                       dtype=theano.config.floatX),
-            name='b', borrow=True)
+        # b = theano.shared(
+            # np.asarray(np.random.normal(loc=0.0, scale=1.0,
+                                        # size=(n_hidden,)),
+                       # dtype=theano.config.floatX),
+            # name='b', borrow=True)
 
         self.w = w # shared weights
-        self.b = b # bias for normal layer
-        self.b_hid = b_hid # hidden bias for AE
+        self.b = b_hid # bias for normal layer
         self.b_prime = b_vis # visible bias for AE
         self.w_prime = self.w.T # Hidden weights for AE
 
-        self._params = [self.w, self.b_hid, self.b_prime]
+        self._params = [self.w, self.b, self.b_prime]
         self.params = [self.w, self.b]
 
     def set_inpt(self, inpt, inpt_dropout, mini_batch_size):
@@ -340,8 +348,25 @@ class AutoencoderLayer():
         self.output_dropout = self.activation_fn(
             T.dot(self.inpt_dropout, self.w) + self.b)
 
+    def forward(self, data, mini_batch_size=200):
+        shared_data = theano.shared(
+            np.asarray(data, dtype=theano.config.floatX),
+            borrow=True)
+
+        i = T.lscalar() # mini-batch index
+        fwd = theano.function(
+            [i], self.output,
+            givens={
+                self.inpt: shared_data[i*mini_batch_size: \
+                                       (i+1)* mini_batch_size]
+            })
+        num_batches = len(data)/mini_batch_size
+        out = np.asarray([fwd(j) for j in xrange(num_batches)])
+        return out.reshape(out.shape[0] * out.shape[1], out.shape[2])
+
+
     def get_hidde_values(self, inpt):
-        return self.activation_fn(T.dot(inpt, self.w) + self.b_hid)
+        return self.activation_fn(T.dot(inpt, self.w) + self.b)
 
     def get_reconstructed_input(self, hidden):
         return self.activation_fn(T.dot(hidden, self.w_prime) + self.b_prime)
@@ -367,7 +392,8 @@ class AutoencoderLayer():
 
         return (cost, updates)
 
-    def train(self, training_data=None, batch_size=200, eta=0.25, epochs=1):
+    def train(self, training_data=None, ff_layers=[],
+              batch_size=200, eta=0.25, epochs=1):
         index = T.lscalar() # Minibatch index
         x = T.matrix("x") # Inputdata
 
@@ -377,6 +403,7 @@ class AutoencoderLayer():
         # Prepare Theano shared variables with the shape and type of
         # The train, valid batches.
         train_x_zeros, _ = training_data.next()
+        for l in ff_layers: train_x_zeros = l.forward(train_x_zeros)
         training_x = tshared(train_x_zeros)
         training_data.reset()
 
@@ -395,6 +422,7 @@ class AutoencoderLayer():
         for epoch in xrange(epochs):
             c = []
             for train_x, _ in training_data:
+                for l in ff_layers: train_x = l.forward(train_x)
                 training_x = tshared(train_x)
                 for batch_index in xrange(num_training_batches):
                     c.append(train_mb(batch_index))
@@ -404,12 +432,12 @@ class AutoencoderLayer():
     def __getstate__(self):
         return(self.n_in, self.n_hidden, self.activation_fn, \
                self.p_dropout, self.inpt, self.output, self.inpt_dropout, \
-               self.output_dropout, self.w, self.b, self.b_hid, self.w_prime, \
+               self.output_dropout, self.w, self.b, self.w_prime, \
                self.b_prime)
 
     def __setstate__(self, state):
         n_in, n_hidden, activation_fn,  p_dropout, inpt, output, inpt_dropout, \
-               output_dropout, w, b, b_hid, w_prime,  b_prime = state
+               output_dropout, w, b, w_prime,  b_prime = state
 
         self.n_in = n_in
         self.n_hidden = n_hidden
@@ -421,11 +449,10 @@ class AutoencoderLayer():
         self.output_dropout = output_dropout
         self.w = w
         self.b = b
-        self.b_hid = b_hid
         self.w_prime = w_prime
         self.b_prime = b_prime
         self.params = [self.w, self.b]
-        self._params = [self.w, self.b_hid, self.b_prime]
+        self._params = [self.w, self.b, self.b_prime]
 
 class FullyConnectedLayer():
 
