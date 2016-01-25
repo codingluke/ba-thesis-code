@@ -41,6 +41,7 @@ from theano.tensor.nnet import conv
 from theano.tensor.nnet import softmax
 from theano.tensor import shared_randomstreams
 from theano.tensor.signal import downsample
+from theano.tensor.shared_randomstreams import RandomStreams
 
 # Activation functions for neurons
 def linear(z): return z
@@ -97,7 +98,8 @@ class Network():
 
     def predict(self, data):
         shared_data = theano.shared(
-            np.asarray(data, dtype=theano.config.floatX), borrow=True)
+            np.asarray(data, dtype=theano.config.floatX),
+            borrow=True)
 
         i = T.lscalar() # mini-batch index
         predictions = theano.function(
@@ -295,11 +297,13 @@ class AutoencoderLayer():
 
     def __init__(self, n_in=None, n_hidden=None, w=None, b_hid=None,
                  b_vis=None, activation_fn=sigmoid, p_dropout=0.0,
-                 representative_layer=None):
+                 corruption_level=0.0):
         self.n_in = n_in
         self.n_hidden = n_hidden
         self.activation_fn = activation_fn
         self.p_dropout = p_dropout
+        self.theano_rng = RandomStreams(np.random.randint(2 ** 30))
+        self.corruption_level = corruption_level
 
         if not w:
             w = theano.shared(
@@ -347,6 +351,12 @@ class AutoencoderLayer():
         self.output_dropout = self.activation_fn(
             T.dot(self.inpt_dropout, self.w) + self.b)
 
+    def get_corrupted_input(self):
+        if self.corruption_level == 0.0: return self.inpt
+        return self.theano_rng.binomial(size=self.inpt.shape, n=1,
+                                  p=1 - self.corruption_level,
+                                  dtype=theano.config.floatX) * self.inpt
+
     def forward(self, data, mini_batch_size=200):
         shared_data = theano.shared(
             np.asarray(data, dtype=theano.config.floatX),
@@ -370,8 +380,8 @@ class AutoencoderLayer():
     def get_reconstructed_input(self, hidden):
         return self.activation_fn(T.dot(hidden, self.w_prime) + self.b_prime)
 
-    def get_cost_updates(self, corruption_level=None, eta=None):
-        y = self.get_hidde_values(self.inpt)
+    def get_cost_updates(self, eta=None):
+        y = self.get_hidde_values(self.get_corrupted_input())
         z = self.get_reconstructed_input(y)
         cost = T.nnet.binary_crossentropy(z, self.inpt).mean()
         grads = T.grad(cost=cost, wrt=self._params)
