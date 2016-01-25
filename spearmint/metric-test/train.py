@@ -59,7 +59,7 @@ def train(job_id, border, n_hidden_layer, eta):
                   C['mini_batch_size'])
 
     result = net.SGD(training_data=training_data, epochs=C['epochs'],
-                     mini_batch_size=C['mini_batch_size'], eta=eta,
+                     batch_size=C['mini_batch_size'], eta=eta,
                      validation_data=validation_data, lmbda=C['lmbda'],
                      momentum=None, patience=C['patience'],
                      patience_increase=C['patience_increase'],

@@ -66,7 +66,7 @@ print '...start training'
 net.SGD(training_data=training_data, epochs=10,
         mini_batch_size=mini_batch_size, eta=0.01,
         validation_data=validation_data, lmbda=0.0,
-        momentum=None, patience=20000, patience_increase=2,
+        momentum=None, patience_increase=2,
         improvement_threshold=0.995, validation_frequency=2,
         save_dir='./model/sae_full_')
 end = timer()

@@ -35,7 +35,7 @@ def train(job_id, border, n_hidden_layer, eta, lmbda):
                   mini_batch_size)
 
     result = net.SGD(training_data=training_data, epochs=100,
-            mini_batch_size=mini_batch_size, eta=eta,
+            batch_size=mini_batch_size, eta=eta,
             validation_data=validation_data, lmbda=lmbda,
             momentum=None, patience=20000, patience_increase=2,
             improvement_threshold=0.995, validation_frequency=5000)
