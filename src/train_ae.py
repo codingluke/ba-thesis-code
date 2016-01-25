@@ -70,7 +70,7 @@ net.pretrain_autoencoders(
 training_data.reset()
 print '...start training'
 net.SGD(training_data=training_data, epochs=4,
-        mini_batch_size=mini_batch_size, eta=0.025,
+        batch_size=mini_batch_size, eta=0.025,
         validation_data=validation_data, lmbda=0.0,
         momentum=None, patience=20000, patience_increase=2,
         improvement_threshold=0.995, validation_frequency=2,

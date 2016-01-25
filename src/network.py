@@ -54,41 +54,41 @@ np.random.seed(45675674)
 #### Main class used to construct and train networks
 class Network():
 
-    def __init__(self, layers, mini_batch_size):
+    def __init__(self, layers, batch_size):
         """Takes a list of `layers`, describing the network architecture, and
         a value for the `mini_batch_size` to be used during training
         by stochastic gradient descent.
 
         """
         self.layers = layers
-        self.mini_batch_size = mini_batch_size
+        self.batch_size = batch_size
         self.params = [param
                        for layer in self.layers
                        for param in layer.params]
         self.x = T.matrix("x", dtype=theano.config.floatX)
         self.y = T.matrix("y", dtype=theano.config.floatX)
         init_layer = self.layers[0]
-        init_layer.set_inpt(self.x, self.x, self.mini_batch_size)
+        init_layer.set_inpt(self.x, self.x, self.batch_size)
         for j in xrange(1, len(self.layers)):
             prev_layer, layer  = self.layers[j-1], self.layers[j]
             layer.set_inpt(prev_layer.output, prev_layer.output_dropout,
-                           self.mini_batch_size)
+                           self.batch_size)
         self.output = self.layers[-1].output
         self.output_dropout = self.layers[-1].output_dropout
         self.meta = {}
 
     def __getstate__(self):
-        return (self.layers, self.mini_batch_size,
+        return (self.layers, self.batch_size,
                 self.x, self.y, self.params, self.meta)
 
     def __setstate__(self, state):
-        layers = mini_batch_size = x = y = params = meta = None
+        layers = batch_size = x = y = params = meta = None
         if len(state) == 5:
-          layers, mini_batch_size, x, y, params = state
+          layers, batch_size, x, y, params = state
         else:
-          layers, mini_batch_size, x, y, params, meta = state
+          layers, batch_size, x, y, params, meta = state
         self.layers = layers
-        self.mini_batch_size = mini_batch_size
+        self.batch_size = batch_size
         self.x = x
         self.y = y
         self.params = params
@@ -106,10 +106,10 @@ class Network():
             [i], self.layers[-1].output,
             givens={
                 self.x:
-                shared_data[i*self.mini_batch_size: (i+1)*self.mini_batch_size]
+                shared_data[i*self.batch_size: (i+1)*self.batch_size]
             })
 
-        num_batches = len(data)/self.mini_batch_size
+        num_batches = len(data)/self.batch_size
         return [predictions(j) for j in xrange(num_batches)]
 
     def save(self, filename='model.pkl'):
@@ -125,7 +125,35 @@ class Network():
             ae.train(training_data=training_data, batch_size=batch_size,
                      eta=eta, epochs=epochs, ff_layers=aes[:index])
 
-    def SGD(self, training_data=None, epochs=10, mini_batch_size=100,
+    def rms_prop(self, grads, eta):
+        rho = 0.9
+        epsilon = 1e-6
+        updates = []
+        for p, g in zip(self.params, grads):
+            acc = theano.shared(p.get_value() * 0.,
+                                 broadcastable=p.broadcastable)
+            acc_new = rho * acc + (1 - rho) * g ** 2
+            gradient_scaling = T.sqrt(acc_new + epsilon)
+            g = g / gradient_scaling
+            updates.append((acc, acc_new))
+            updates.append((p, T.cast(p - eta * g, theano.config.floatX)))
+        return updates
+
+    def naive_sgd(self, grads=None, eta=None, momentum=0.0):
+        if momentum == 0.0:
+            return [(param, param-eta * grad)
+                    for param, grad in zip(self.params, grads)]
+        else:
+            updates = []
+            m = momentum
+            for param, grad in zip(self.params, grads):
+                v = theano.shared(param.get_value() * 0.,
+                                  broadcastable=param.broadcastable)
+                updates.append((param, param - eta * v))
+                updates.append((v, m * v + (1. - m) * grad))
+            return updates
+
+    def SGD(self, training_data=None, epochs=10, batch_size=100,
             eta=0.025, validation_data=None, lmbda=0.0, momentum=None,
             patience=40000, patience_increase=2, improvement_threshold=0.995,
             validation_frequency=1, metric_recorder=None, save_dir=None):
@@ -136,7 +164,7 @@ class Network():
 
         # Save metainfo for later
         self.meta = {
-          'mini_batch_size' : mini_batch_size,
+          'mini_batch_size' : batch_size,
           'eta' : eta,
           'lmbda' : lmbda,
           'momentum' : momentum,
@@ -151,7 +179,6 @@ class Network():
           'algorithm' : 'RBMSProp'
         }
 
-
         # Prepare Theano shared variables with the shape and type of
         # The train, valid batches.
         train_x_zeros, train_y_zeros = training_data.next()
@@ -164,9 +191,9 @@ class Network():
         validation_data.reset()
 
         # compute number of minibatches for training, validation and testing
-        num_training_batches = size(training_x) / mini_batch_size
+        num_training_batches = size(training_x) / batch_size
         tota_num_training_batches = num_training_batches * len(training_data)
-        num_validation_batches = size(validation_x) / mini_batch_size
+        num_validation_batches = size(validation_x) / batch_size
 
         # define the (regularized) cost function,
         # symbolic gradients, and updates
@@ -175,31 +202,7 @@ class Network():
                0.5*lmbda*l2_norm_squared/num_training_batches
         grads = T.grad(cost=cost, wrt=self.params)
 
-        # RBMSProp
-        rho = 0.9
-        epsilon = 1e-6
-        updates = []
-        for p, g in zip(self.params, grads):
-            acc = theano.shared(p.get_value() * 0.,
-                                 broadcastable=p.broadcastable)
-            acc_new = rho * acc + (1 - rho) * g ** 2
-            gradient_scaling = T.sqrt(acc_new + epsilon)
-            g = g / gradient_scaling
-            updates.append((acc, acc_new))
-            updates.append((p, T.cast(p - eta * g, theano.config.floatX)))
-
-        # With MOMENTUM
-        #updates = []
-        # m = 0.1
-        #for param, grad in zip(self.params, grads):
-            #v = theano.shared(param.get_value() * 0.,
-                              #broadcastable=param.broadcastable)
-            #updates.append((param, param - eta * v))
-            #updates.append((v, m * v + (1. - m) * grad))
-
-        # Naive SGD
-        #updates = [(param, param-eta*grad)
-                   #for param, grad in zip(self.params, grads)]
+        updates = self.rms_prop(grads, eta)
 
         # define functions to train a mini-batch, and to compute the
         # accuracy in validation and test mini-batches.
@@ -209,25 +212,25 @@ class Network():
             [i], cost, updates=updates,
             givens={
                 self.x:
-                training_x[i*self.mini_batch_size: (i+1)*self.mini_batch_size],
+                training_x[i*self.batch_size: (i+1)*self.batch_size],
                 self.y:
-                training_y[i*self.mini_batch_size: (i+1)*self.mini_batch_size]
+                training_y[i*self.batch_size: (i+1)*self.batch_size]
             })
 
         validate_mb_accuracy = theano.function(
             [i], self.layers[-1].accuracy(self.y),
             givens={
                 self.x:
-                validation_x[i*self.mini_batch_size: (i+1)*self.mini_batch_size],
+                validation_x[i*self.batch_size: (i+1)*self.batch_size],
                 self.y:
-                validation_y[i*self.mini_batch_size: (i+1)*self.mini_batch_size]
+                validation_y[i*self.batch_size: (i+1)*self.batch_size]
             })
 
         # Do the actual training
         best_validation_accuracy = 1.0
         done_looping = False
 
-        val_per_epochs = training_data.actual_full_length() / mini_batch_size
+        val_per_epochs = training_data.actual_full_length() / batch_size
         validation_frequency = int(val_per_epochs/ validation_frequency)
 
         iteration = 0
@@ -342,12 +345,12 @@ class AutoencoderLayer():
         self._params = [self.w, self.b, self.b_prime]
         self.params = [self.w, self.b]
 
-    def set_inpt(self, inpt, inpt_dropout, mini_batch_size):
-        self.inpt = inpt.reshape((mini_batch_size, self.n_in))
+    def set_inpt(self, inpt, inpt_dropout, batch_size):
+        self.inpt = inpt.reshape((batch_size, self.n_in))
         self.output = self.activation_fn(
             (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
         self.inpt_dropout = dropout_layer(
-            inpt_dropout.reshape((mini_batch_size, self.n_in)), self.p_dropout)
+            inpt_dropout.reshape((batch_size, self.n_in)), self.p_dropout)
         self.output_dropout = self.activation_fn(
             T.dot(self.inpt_dropout, self.w) + self.b)
 
@@ -357,7 +360,7 @@ class AutoencoderLayer():
                                   p=1 - self.corruption_level,
                                   dtype=theano.config.floatX) * self.inpt
 
-    def forward(self, data, mini_batch_size=200):
+    def forward(self, data, batch_size=200):
         shared_data = theano.shared(
             np.asarray(data, dtype=theano.config.floatX),
             borrow=True)
@@ -366,10 +369,10 @@ class AutoencoderLayer():
         fwd = theano.function(
             [i], self.output,
             givens={
-                self.inpt: shared_data[i*mini_batch_size: \
-                                       (i+1)* mini_batch_size]
+                self.inpt: shared_data[i*batch_size: \
+                                       (i+1)* batch_size]
             })
-        num_batches = len(data)/mini_batch_size
+        num_batches = len(data)/batch_size
         out = np.asarray([fwd(j) for j in xrange(num_batches)])
         return out.reshape(out.shape[0] * out.shape[1], out.shape[2])
 
@@ -470,6 +473,7 @@ class FullyConnectedLayer():
         self.n_out = n_out
         self.activation_fn = activation_fn
         self.p_dropout = p_dropout
+
         # Initialize weights and biases
         self.w = theano.shared(
             np.asarray(
@@ -486,12 +490,12 @@ class FullyConnectedLayer():
             name='b', borrow=True)
         self.params = [self.w, self.b]
 
-    def set_inpt(self, inpt, inpt_dropout, mini_batch_size):
-        self.inpt = inpt.reshape((mini_batch_size, self.n_in))
+    def set_inpt(self, inpt, inpt_dropout, batch_size):
+        self.inpt = inpt.reshape((batch_size, self.n_in))
         self.output = self.activation_fn(
             (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
         self.inpt_dropout = dropout_layer(
-            inpt_dropout.reshape((mini_batch_size, self.n_in)), self.p_dropout)
+            inpt_dropout.reshape((batch_size, self.n_in)), self.p_dropout)
         self.output_dropout = self.activation_fn(
             T.dot(self.inpt_dropout, self.w) + self.b)
         self.y_out = T.argmax(self.output, axis=1)

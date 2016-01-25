@@ -61,7 +61,7 @@ def train(job_id, minibatch_size):
                   minibatch_size)
 
     result = net.SGD(training_data=training_data, epochs=C['epochs'],
-                     mini_batch_size=minibatch_size, eta=eta,
+                     batch_size=minibatch_size, eta=eta,
                      validation_data=validation_data, lmbda=C['lmbda'],
                      momentum=None, patience=C['patience'],
                      patience_increase=C['patience_increase'],
@@ -79,7 +79,7 @@ def main(job_id, params):
     print params
     return train(job_id, params['size'][0])
 
-if __name__ == '__main__': 
+if __name__ == '__main__':
     job_id = 12 # job 8 strange... , ab 12 mit metadata im model
     for i in [20, 50, 100, 200, 500, 1000, 1500]:
         main(job_id, {'size' : [i]})
