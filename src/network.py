@@ -232,6 +232,7 @@ class Network():
 
         val_per_epochs = training_data.actual_full_length() / batch_size
         validation_frequency = int(val_per_epochs/ validation_frequency)
+        patience = validation_frequency * 4
 
         iteration = 0
         for epoch in xrange(epochs):
