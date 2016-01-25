@@ -97,8 +97,7 @@ class Network():
 
     def predict(self, data):
         shared_data = theano.shared(
-            np.asarray(data, dtype=theano.config.floatX),
-            borrow=True)
+            np.asarray(data, dtype=theano.config.floatX), borrow=True)
 
         i = T.lscalar() # mini-batch index
         predictions = theano.function(
