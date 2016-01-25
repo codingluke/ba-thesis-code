@@ -15,9 +15,8 @@ import config
 
 class TestCleaningEngine(unittest.TestCase):
 
-    @unittest.skipUnless(config.slow, 'slow test')
     def test_clean(self):
-        img = '../data/test/154.png'
+        img = '../data/test/10.png'
         PIL.Image.open(img).show()
 
         # e = engine.CleaningEngine('./tests/data/models/72000_model.pkl')
@@ -26,7 +25,7 @@ class TestCleaningEngine(unittest.TestCase):
         # e = engine.CleaningEngine('./tests/data/models/162000_model.pkl')
         # e.clean_and_show(img)
 
-        # e = engine.CleaningEngine('../src/model/meta_4460_model.pkl')
+        # e = engine.CleaningEngine('./src/model/meta_4460_model.pkl')
         # e.clean_and_show(img)
 
         # e = engine.CleaningEngine('./tests/data/models/342000_model.pkl')
@@ -35,8 +34,17 @@ class TestCleaningEngine(unittest.TestCase):
         e = engine.CleaningEngine('./tests/data/models/13_72000_model.pkl')
         e.clean_and_show(img)
 
-        e = engine.CleaningEngine('./tests/data/models/ae_67500_model.pkl')
+        # e = engine.CleaningEngine('./tests/data/models/ae_67500_model.pkl')
+        # e.clean_and_show(img)
+
+        e = engine.CleaningEngine('./src/model/ae2_90000_model.pkl')
         e.clean_and_show(img)
+
+        e = engine.CleaningEngine('./tests/data/models/ae3_213750_model.pkl')
+        e.clean_and_show(img)
+
+        # e = engine.CleaningEngine('./tests/data/models/ae4_33750_model.pkl')
+        # e.clean_and_show(img)
 
     def test_metadata(self):
         e = engine.CleaningEngine('./tests/data/models/meta_2200_model.pkl')
