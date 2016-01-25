@@ -12,6 +12,7 @@ from timeit import default_timer as timer
 from network import Network, FullyConnectedLayer, \
                     tanh, ReLU, AutoencoderLayer
 from preprocessor import BatchImgProcessor
+from engine import CleaningEngine
 
 border = 3
 

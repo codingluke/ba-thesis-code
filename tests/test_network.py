@@ -41,9 +41,9 @@ class TestNetwork(unittest.TestCase):
           FullyConnectedLayer(n_in=n_in-10, n_out=1),
         ], mini_batch_size)
 
-        net.pretrain_autoencoders(
-            training_data=self.pretrain_data,
-            batch_size=mini_batch_size,
-            eta=0.025, epochs=10)
+        # net.pretrain_autoencoders(
+            # training_data=self.pretrain_data,
+            # batch_size=mini_batch_size,
+            # eta=0.025, epochs=10)
 
         pass

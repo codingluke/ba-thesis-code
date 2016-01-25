@@ -97,8 +97,7 @@ class Network():
 
     def predict(self, data):
         shared_data = theano.shared(
-            np.asarray(data, dtype=theano.config.floatX),
-            borrow=True)
+            np.asarray(data, dtype=theano.config.floatX), borrow=True)
 
         i = T.lscalar() # mini-batch index
         predictions = theano.function(
@@ -436,8 +435,8 @@ class AutoencoderLayer():
                self.b_prime)
 
     def __setstate__(self, state):
-        n_in, n_hidden, activation_fn,  p_dropout, inpt, output, inpt_dropout, \
-               output_dropout, w, b, w_prime,  b_prime = state
+        n_in, n_hidden, activation_fn,  p_dropout, inpt, output, \
+        inpt_dropout, output_dropout, w, b, w_prime, b_prime = state
 
         self.n_in = n_in
         self.n_hidden = n_hidden
