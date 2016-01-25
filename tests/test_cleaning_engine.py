@@ -16,12 +16,12 @@ import config
 class TestBatchCleaner(unittest.TestCase):
 
   def test_clean_and_save(self):
-    bCleaner = BatchCleaner(dirty_dir='../data/test/', limit=3,
+    bCleaner = BatchCleaner(dirty_dir='../data/test/',
         model_path='./tests/data/models/ae3_213750_model.pkl')
     bCleaner.clean_and_save(output_dir='../data/test_cleaned')
 
   def test_clean_for_submission(self):
-    bCleaner = BatchCleaner(dirty_dir='../data/test/', limit=3,
+    bCleaner = BatchCleaner(dirty_dir='../data/test/',
         model_path='./tests/data/models/ae3_213750_model.pkl')
     bCleaner.clean_for_submission(output_dir='../data/test_cleaned')
 
