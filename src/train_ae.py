@@ -13,7 +13,7 @@ from network import Network, FullyConnectedLayer, \
                     tanh, ReLU, AutoencoderLayer
 from preprocessor import BatchImgProcessor
 
-border = 2
+border = 3
 
 BA1 = BatchImgProcessor.load(
     X_dirpath='../../data/train_cleaned/*',
@@ -45,11 +45,12 @@ mini_batch_size = 200
 
 net = Network([
         AutoencoderLayer(n_in=n_in, n_hidden=n_in-5),
-        FullyConnectedLayer(n_in=n_in-5, n_out=80),
-        FullyConnectedLayer(n_in=80, n_out=1),
+        AutoencoderLayer(n_in=n_in-5, n_hidden=n_in-10),
+        FullyConnectedLayer(n_in=n_in-10, n_out=60),
+        FullyConnectedLayer(n_in=60, n_out=1),
     ], mini_batch_size)
 
-net.layers[0].train(training_data=pretrain_data,
+net.pretrain_autoencoders(training_data=pretrain_data,
                     batch_size=mini_batch_size,
                     eta=0.025, epochs=10)
 
@@ -62,10 +63,10 @@ net.layers[0].train(training_data=pretrain_data,
 training_data.reset()
 print '...start training'
 net.SGD(training_data=training_data, epochs=10,
-        mini_batch_size=mini_batch_size, eta=0.025,
+        mini_batch_size=mini_batch_size, eta=0.01,
         validation_data=validation_data, lmbda=0.0,
         momentum=None, patience=20000, patience_increase=2,
         improvement_threshold=0.995, validation_frequency=2,
-        save_dir='./model/ae_')
+        save_dir='./model/ae4_')
 end = timer()
 print "Zeit : %d" % (end-start)
