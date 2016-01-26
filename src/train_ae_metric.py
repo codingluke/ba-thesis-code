@@ -26,20 +26,28 @@ BA1 = BatchImgProcessor.load(
     batchsize=5000,
     border=border,
     limit=1,
-    train_stepover=8,
     dtype=theano.config.floatX)
-pretrain_data = BA1(modus='train', random=True)
+pretrain_data = BA1(modus='full', random=True)
 
-BatchProcessor = BatchImgProcessor.load(
+BA2 = BatchImgProcessor.load(
     X_dirpath='../../data/train/*',
     y_dirpath='../../data/train_cleaned/',
     batchsize=5000,
     border=border,
     limit=1,
-    train_stepover=8,
     dtype=theano.config.floatX)
-training_data = BatchProcessor(modus='train', random=True)
-validation_data = BatchProcessor(modus='valid')
+
+BA3 = BatchImgProcessor.load(
+    X_dirpath='../../data/valid/*',
+    y_dirpath='../../data/train_cleaned/',
+    batchsize=5000,
+    border=border,
+    limit=5,
+    dtype=theano.config.floatX)
+
+training_data = BA2(modus='full', random=True)
+validation_data = BA3(modus='full', random=False)
+
 print "Training size: %d" % len(training_data)
 print "Validation size: %d" % len(validation_data)
 
@@ -48,8 +56,10 @@ n_in = (2*border+1)**2
 mini_batch_size = 200
 
 net = Network([
-        AutoencoderLayer(n_in=n_in, n_hidden=80, corruption_level=0.2),
-        AutoencoderLayer(n_in=80, n_hidden=50, corruption_level=0.4),
+        AutoencoderLayer(n_in=n_in, n_hidden=50, corruption_level=0.2,
+            activation_fn=ReLU),
+        # AutoencoderLayer(n_in=80, n_hidden=50, corruption_level=0.4,
+            # activation_fn=ReLU),
         FullyConnectedLayer(n_in=50, n_out=1),
     ], mini_batch_size)
 
@@ -74,8 +84,8 @@ print '...start training'
 net.SGD(training_data=training_data, epochs=2,
         batch_size=mini_batch_size, eta=0.01,
         validation_data=validation_data, lmbda=0.0,
-        momentum=None, patience=20000, patience_increase=2,
+        momentum=0.0, patience=20000, patience_increase=2,
         improvement_threshold=0.995, validation_frequency=2,
-        save_dir=save_dir, metric_recorder=mr)
+        save_dir=save_dir, metric_recorder=mr, algorithm='rmsprop')
 
 print "Zeit : %d" % mr.stop()
