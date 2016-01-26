@@ -117,13 +117,16 @@ class Network():
         cPickle.dump(self, f)
 
     def pretrain_autoencoders(self, training_data=None, batch_size=200,
-                              eta=0.25, epochs=1):
+                              eta=0.25, epochs=1, metric_recorder=None,
+                              save_dir=None):
         aes = [layer
                for layer in self.layers
                if isinstance(layer, AutoencoderLayer)]
         for index, ae in enumerate(aes):
             ae.train(training_data=training_data, batch_size=batch_size,
-                     eta=eta, epochs=epochs, ff_layers=aes[:index])
+                     eta=eta, epochs=epochs, ff_layers=aes[:index],
+                     metric_recorder=metric_recorder, level=index)
+        if save_dir: self.save(save_dir + "pretrained_model.pkl")
 
     def rms_prop(self, grads, eta):
         rho = 0.9
@@ -153,10 +156,17 @@ class Network():
                 updates.append((v, m * v + (1. - m) * grad))
             return updates
 
+    def get_layer_string(self):
+        return "-".join([layer.to_string() for layer in self.layers])
+
+    def get_layer_dropout_string(self):
+        return ", ".join([str(layer.p_dropout) for layer in self.layers])
+
     def SGD(self, training_data=None, epochs=10, batch_size=100,
             eta=0.025, validation_data=None, lmbda=0.0, momentum=None,
             patience=40000, patience_increase=2, improvement_threshold=0.995,
-            validation_frequency=1, metric_recorder=None, save_dir=None):
+            validation_frequency=1, metric_recorder=None, save_dir=None,
+            algorithm='rmsprop'):
         """Train the network using mini-batch stochastic gradient descent."""
 
         if not validation_data or len(validation_data) < 1:
@@ -168,16 +178,18 @@ class Network():
           'eta' : eta,
           'lmbda' : lmbda,
           'momentum' : momentum,
-          'patience' : patience,
           'patience_increase' : patience_increase,
           'improvement_threshold' : 0.995,
           'validation_frequency' : validation_frequency,
-          'n_hidden' : self.layers[1].n_in,
-          'n_input' : self.layers[0].n_in,
+          'dropouts' : self.get_layer_dropout_string(),
+          'layers' : self.get_layer_string(),
           'training_data' : len(training_data),
           'validation_data' : len(validation_data),
-          'algorithm' : 'RBMSProp'
+          'algorithm' : algorithm
         }
+
+        if metric_recorder:
+            metric_recorder.record_training_info(infos=self.meta)
 
         # Prepare Theano shared variables with the shape and type of
         # The train, valid batches.
@@ -202,11 +214,15 @@ class Network():
                0.5*lmbda*l2_norm_squared/num_training_batches
         grads = T.grad(cost=cost, wrt=self.params)
 
-        updates = self.rms_prop(grads, eta)
+        # define update rules
+        updates = []
+        if algorithm == 'rmsprop':
+            updates = self.rms_prop(grads, eta)
+        elif algorithm == 'sgd':
+            updates = self.naive_sgd(grads, eta, momentum=momentum)
 
         # define functions to train a mini-batch, and to compute the
         # accuracy in validation and test mini-batches.
-
         i = T.lscalar() # mini-batch index
         train_mb = theano.function(
             [i], cost, updates=updates,
@@ -332,11 +348,6 @@ class AutoencoderLayer():
                                             size=(n_hidden,)),
                            dtype=theano.config.floatX),
                 name='bhid', borrow=True)
-        # b = theano.shared(
-            # np.asarray(np.random.normal(loc=0.0, scale=1.0,
-                                        # size=(n_hidden,)),
-                       # dtype=theano.config.floatX),
-            # name='b', borrow=True)
 
         self.w = w # shared weights
         self.b = b_hid # bias for normal layer
@@ -354,6 +365,13 @@ class AutoencoderLayer():
             inpt_dropout.reshape((batch_size, self.n_in)), self.p_dropout)
         self.output_dropout = self.activation_fn(
             T.dot(self.inpt_dropout, self.w) + self.b)
+
+    def to_string(self):
+        if self.corruption_level == 0.0:
+            return "Ae(%d, %d)" % (self.n_in, self.n_hidden)
+        else:
+            return "dAe[%.03f](%d, %d)" % (self.corruption_level, self.n_in,\
+                                        self.n_hidden)
 
     def get_corrupted_input(self):
         if self.corruption_level == 0.0: return self.inpt
@@ -405,8 +423,8 @@ class AutoencoderLayer():
 
         return (cost, updates)
 
-    def train(self, training_data=None, ff_layers=[],
-              batch_size=200, eta=0.25, epochs=1):
+    def train(self, training_data=None, ff_layers=[], metric_recorder=None,
+              batch_size=200, eta=0.25, epochs=1, level=0):
         index = T.lscalar() # Minibatch index
         x = T.matrix("x") # Inputdata
 
@@ -441,6 +459,9 @@ class AutoencoderLayer():
                     c.append(train_mb(batch_index))
 
             print "Trainig epoch %d, cost %f" % (epoch, np.mean(c))
+            if metric_recorder:
+                metric_recorder.record(cost=np.mean(c), epoch=epoch, eta=eta,
+                                       type='pretrain_%d' % level)
 
     def __getstate__(self):
         return(self.n_in, self.n_hidden, self.activation_fn, \
@@ -504,6 +525,9 @@ class FullyConnectedLayer():
     def accuracy(self, y):
         "Return the accuracy for the mini-batch."
         return T.sqr(self.output - y).mean()
+
+    def to_string(self):
+        return "FC(%d, %d)" % (self.n_in, self.n_out)
 
     def cost(self, net):
         # cost = T.sqr(self.output - net.y).mean()
