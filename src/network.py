@@ -163,7 +163,7 @@ class Network():
         return ", ".join([str(layer.p_dropout) for layer in self.layers])
 
     def SGD(self, training_data=None, epochs=10, batch_size=100,
-            eta=0.025, validation_data=None, lmbda=0.0, momentum=None,
+            eta=0.025, validation_data=None, lmbda=0.0, momentum=0.0,
             patience=40000, patience_increase=2, improvement_threshold=0.995,
             validation_frequency=1, metric_recorder=None, save_dir=None,
             algorithm='rmsprop'):
@@ -361,6 +361,7 @@ class AutoencoderLayer():
         self.inpt = inpt.reshape((batch_size, self.n_in))
         self.output = self.activation_fn(
             (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
+        self.hidden_output = self.get_hidden_values(self.inpt)
         self.inpt_dropout = dropout_layer(
             inpt_dropout.reshape((batch_size, self.n_in)), self.p_dropout)
         self.output_dropout = self.activation_fn(
@@ -386,7 +387,7 @@ class AutoencoderLayer():
 
         i = T.lscalar() # mini-batch index
         fwd = theano.function(
-            [i], self.output,
+            [i], self.hidden_output,
             givens={
                 self.inpt: shared_data[i*batch_size: \
                                        (i+1)* batch_size]
@@ -396,14 +397,14 @@ class AutoencoderLayer():
         return out.reshape(out.shape[0] * out.shape[1], out.shape[2])
 
 
-    def get_hidde_values(self, inpt):
-        return self.activation_fn(T.dot(inpt, self.w) + self.b)
+    def get_hidden_values(self, inpt):
+        return sigmoid(T.dot(inpt, self.w) + self.b)
 
     def get_reconstructed_input(self, hidden):
-        return self.activation_fn(T.dot(hidden, self.w_prime) + self.b_prime)
+        return sigmoid(T.dot(hidden, self.w_prime) + self.b_prime)
 
     def get_cost_updates(self, eta=None):
-        y = self.get_hidde_values(self.get_corrupted_input())
+        y = self.get_hidden_values(self.get_corrupted_input())
         z = self.get_reconstructed_input(y)
         cost = T.nnet.binary_crossentropy(z, self.inpt).mean()
         grads = T.grad(cost=cost, wrt=self._params)
