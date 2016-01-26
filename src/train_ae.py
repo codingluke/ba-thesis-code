@@ -53,7 +53,7 @@ net = Network([
 print '...start pretraining'
 net.pretrain_autoencoders(training_data=pretrain_data,
                     batch_size=mini_batch_size,
-                    eta=0.025, epochs=15)
+                    eta=0.01, epochs=15)
 
 #image = PIL.Image.fromarray(tile_raster_images(
 #        X=net.layers[0].w.get_value(borrow=True).T,
@@ -64,7 +64,7 @@ net.pretrain_autoencoders(training_data=pretrain_data,
 training_data.reset()
 print '...start training'
 net.SGD(training_data=training_data, epochs=10,
-        mini_batch_size=mini_batch_size, eta=0.01,
+        batch_size=mini_batch_size, eta=0.025,
         validation_data=validation_data, lmbda=0.0,
         momentum=None, patience_increase=2,
         improvement_threshold=0.995, validation_frequency=2,
