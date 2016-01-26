@@ -15,7 +15,8 @@ class MetricReader(object):
 
     def __init__(self, config_dir_path=None):
         self.options = get_options(config_dir_path)
-        self.connection, self.db, self.metrics, self.meta = self.__connect()
+        self.connection, self.db, self.metrics, self.meta, \
+            self.trainings = self.__connect()
 
     def get_records(self, job_id=None):
         cursor = self.metrics.find({'job_id' : job_id})
@@ -103,16 +104,28 @@ class MetricReader(object):
         db = connection[db_name]
         metrics = db.db[experiment_name]['metrics']
         meta = db.db['meta']
-        return connection, db, metrics, meta
+        trainings = db.db[experiment_name]['trainings']
+        return connection, db, metrics, meta, trainings
 
 class MetricRecorder(object):
 
     def __init__(self, job_id=None, config_dir_path=None):
-        self.job_id = job_id
         self.options = get_options(config_dir_path)
-        self.connection, self.db, self.metrics, self.meta = self.__connect()
+        self.connection, self.db, self.metrics, self.meta, \
+            self.trainings = self.__connect()
+        if not job_id: job_id = self.get_unique_job_id()
+        self.job_id = job_id
+        self.experiment_name = self.options['experiment-name']
         self.starttime = timer()
         self.endtime = 0
+
+    def get_unique_job_id(self):
+        ids = self.trainings.distinct('job_id')
+        if len(ids) > 0:
+          return max(self.trainings.distinct('job_id')) + 1
+        else:
+          return 1
+
 
     def start(self):
         self.starttime = timer()
@@ -128,22 +141,34 @@ class MetricRecorder(object):
             return timer() - self.starttime
 
     def record(self, job_id=None, cost=None, validation_accuracy=None,
-            epoch=None, iteration=None, second=None):
+            epoch=None, iteration=None, second=None, type='train',
+            eta=None):
         if not job_id: job_id = self.job_id
         if not second: second = self.duration()
+        if validation_accuracy:
+            validation_accuracy = float(validation_accuracy)
         doc = {
             'job_id' : job_id,
             'cost' : float(cost),
-            'validation_accuracy' : float(validation_accuracy),
+            'validation_accuracy' : validation_accuracy,
             'epoch' : epoch,
             'iteration' : iteration,
-            'second' : second
+            'second' : second,
+            'type' : type,
         }
+        if eta: doc['eta'] = float(eta)
         self.metrics.insert_one(doc)
+
+    def record_training_info(self, infos=None, job_id=None, second=None):
+        if not job_id: job_id = self.job_id
+        if not second: second = self.duration()
+        infos['job_id'] = job_id
+        self.trainings.insert_one(infos)
 
     def add_experiment_metainfo(self, constants=None, force=None):
         experiment_name = self.options['experiment-name']
-        experiment = self.meta.find_one({'experiment_name' : experiment_name})
+        experiment = self.meta.find_one({'experiment_name' :
+                                         experiment_name})
         if experiment and force:
             self.meta.remove({'experiment_name' : experiment_name})
         elif experiment:
@@ -170,14 +195,19 @@ class MetricRecorder(object):
         db = connection[db_name]
         metrics = db.db[experiment_name]['metrics']
         meta = db.db['meta']
-        return connection, db, metrics, meta
+        trainings = db.db['trainings']
+        return connection, db, metrics, meta, trainings
 
 def get_options(dir_path):
     # Read in the config file
     expt_dir  = os.path.realpath(os.path.expanduser(dir_path))
-    if not os.path.isdir(expt_dir):
-        raise Exception("Cannot find directory %s" % expt_dir)
-    expt_file = os.path.join(expt_dir, 'config.json')
+    expt_file = ''
+    if not os.path.isdir(expt_dir) and not os.path.isfile(expt_dir):
+        raise Exception("Cannot find directory or file %s" % expt_dir)
+    if os.path.isfile(expt_dir):
+        expt_file = expt_dir
+    else:
+        expt_file = os.path.join(expt_dir, 'config.json')
 
     try:
         with open(expt_file, 'r') as f:
