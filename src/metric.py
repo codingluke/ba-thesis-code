@@ -8,6 +8,7 @@ from collections import OrderedDict
 from pymongo import MongoClient
 import pandas as pd
 import matplotlib.pyplot as plt
+import re
 from pandas.tools.plotting import table
 plt.style.use('ggplot')
 
@@ -18,15 +19,54 @@ class MetricReader(object):
         self.connection, self.db, self.metrics, self.meta, \
             self.trainings = self.__connect()
 
-    def get_records(self, job_id=None):
-        cursor = self.metrics.find({'job_id' : job_id})
+    def get_records(self, job_id=None, typ='train'):
+        type = re.compile(r'^%s' % typ, re.I)
+        cursor = self.metrics.find({'job_id' : job_id,
+                                    'type' : { '$regex' : type}})
         return pd.DataFrame(list(cursor))
+
 
     def get_best_records(self):
         None
 
     def get_best_job_id(self):
         None
+
+    def plot_pretrain(self, job_id=None):
+        df = self.get_records(job_id=job_id, typ='pretrain')
+        fig, ax = plt.subplots(1, 1)
+        num_trainings = len(df[df['epoch'] == 0])
+        print num_trainings
+
+        for i in xrange(num_trainings):
+            training = df[df['type'] == 'pretrain_%d' % i]
+            training[['cost', 'epoch']].plot(x='epoch', y='cost',
+                                   ax=ax)
+        ax.set_title('Autoencoder Vortraining')
+        ax.set_ylabel('Cross-Entropy')
+        ax.set_xlabel('Epochen')
+        # ymin, ymax = ax.get_ylim()
+        # epochs = [df[df['epoch']==e]['iteration'].values[-1]
+                  # for e in xrange(df['epoch'].max())]
+        # ax.vlines(x=epochs, ymin=[ymin], ymax=[ymax], label='epochs', linestyle='dotted')
+        # min = df['validation_accuracy'].min()
+        # min_val = df[df['validation_accuracy']==min]
+        # min_x = min_val['iteration'].values[0]
+        # min_y = min_val['validation_accuracy'].values[0]
+        # xmin, xmax = ax.get_xlim()
+        # ax.annotate('min at (%f)' % min_y, xy=(min_x, min_y), xytext=(xmax/2, ymax/2),
+                    # arrowprops=dict(facecolor='black', shrink=0.05))
+        # ax.plot(min_x, min_y, 'o', color="k")
+        l = ax.legend()
+        meta = self.get_job_metadata(job_id=job_id)
+        layers = meta['layers'].values[0].split('-')
+        for i in xrange(num_trainings):
+            l.get_texts()[i].set_text(u"Layer %d : %s" % (i,layers[i]) )
+        plt.show()
+
+    def get_job_metadata(self, job_id=None):
+        cursor = self.trainings.find({'job_id' : job_id})
+        return pd.DataFrame(list(cursor))
 
     def plot_epoches(self, job_id=None, first=False, title=None):
         index = 0 if first else -1
@@ -105,6 +145,7 @@ class MetricReader(object):
         metrics = db.db[experiment_name]['metrics']
         meta = db.db['meta']
         trainings = db.db[experiment_name]['trainings']
+        # trainings = db.db['trainings']
         return connection, db, metrics, meta, trainings
 
 class MetricRecorder(object):
@@ -195,7 +236,7 @@ class MetricRecorder(object):
         db = connection[db_name]
         metrics = db.db[experiment_name]['metrics']
         meta = db.db['meta']
-        trainings = db.db['trainings']
+        trainings = db.db[experiment_name]['trainings']
         return connection, db, metrics, meta, trainings
 
 def get_options(dir_path):
