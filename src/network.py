@@ -183,8 +183,8 @@ class Network():
           'validation_frequency' : validation_frequency,
           'dropouts' : self.get_layer_dropout_string(),
           'layers' : self.get_layer_string(),
-          'training_data' : len(training_data),
-          'validation_data' : len(validation_data),
+          'training_data' : training_data.full_lenght(),
+          'validation_data' : validation_data.full_lenght(),
           'algorithm' : algorithm
         }
 
@@ -368,11 +368,13 @@ class AutoencoderLayer():
             T.dot(self.inpt_dropout, self.w) + self.b)
 
     def to_string(self):
+        af = 'sgm'
+        if self.activation_fn == ReLU: af = 'rlu'
         if self.corruption_level == 0.0:
-            return "Ae(%d, %d)" % (self.n_in, self.n_hidden)
+            return "Ae[%s](%d, %d)" % (af, self.n_in, self.n_hidden)
         else:
-            return "dAe[%.03f](%d, %d)" % (self.corruption_level, self.n_in,\
-                                        self.n_hidden)
+            return "dAe[%s, %.03f](%d, %d)" %  \
+            (af, self.corruption_level, self.n_in, self.n_hidden)
 
     def get_corrupted_input(self):
         if self.corruption_level == 0.0: return self.inpt

@@ -1,2 +1,2 @@
-slow = False
+slow = True
 mongodb = False

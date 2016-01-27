@@ -21,15 +21,16 @@ class TestNetwork(unittest.TestCase):
     def setUp(self):
         border = 2
         self.n_in = (2*border+1)**2
-        BA1 = BatchImgProcessor.load(
+        self.pretrain = BatchImgProcessor(
           X_dirpath='../data/train_cleaned/*',
           y_dirpath='../data/train_cleaned/',
           batchsize=5000,
           border=border,
           limit=1,
           train_stepover=8,
-          dtype=theano.config.floatX)
-        self.pretrain_data = BA1(modus='full', random=True)
+          dtype=theano.config.floatX,
+          modus='full', random=True)
+        # self.pretrain_data = BA1(modus='full', random=True)
 
     def test_to_string(self):
         net = Network([
@@ -40,7 +41,8 @@ class TestNetwork(unittest.TestCase):
         ], 200)
         layers = net.get_layer_string()
         dropouts = net.get_layer_dropout_string()
-        self.assertEqual(layers, 'Ae(25, 22)-dAe[0.100](22, 19)-FC(19, 1)')
+        test_s = "Ae[sgm](25, 22)-dAe[sgm, 0.100](22, 19)-FC(19, 1)"
+        self.assertEqual(layers, test_s)
 
     @unittest.skipUnless(config.slow, 'slow test')
     def test_pretrain(self):
@@ -54,7 +56,7 @@ class TestNetwork(unittest.TestCase):
         ], mini_batch_size)
 
         net.pretrain_autoencoders(
-            training_data=self.pretrain_data,
+            training_data=self.pretrain,
             batch_size=mini_batch_size,
             eta=0.025, epochs=1)
         pass

@@ -22,24 +22,39 @@ class ImgProcessor(object):
 
 class BatchImgProcessor(object):
 
-    @classmethod
-    def load(cls, X_dirpath=None, y_dirpath=None, border=3,
-            train_stepover=8, limit=None, batchsize=None, dtype='float32'):
-        cls.X_dirpath = X_dirpath
-        cls.y_dirpath = y_dirpath
-        cls.border = border
-        cls.train_stepover = train_stepover
-        cls.batchsize = batchsize
-        cls.limit = limit
-        cls.dtype = dtype
-        cls.preprocessors = [ImgPreprocessor(X_imgpath=img,
+    # @classmethod
+    # def load(cls, X_dirpath=None, y_dirpath=None, border=3,
+            # train_stepover=8, limit=None, batchsize=None, dtype='float32'):
+        # cls.X_dirpath = X_dirpath
+        # cls.y_dirpath = y_dirpath
+        # cls.border = border
+        # cls.train_stepover = train_stepover
+        # cls.batchsize = batchsize
+        # cls.limit = limit
+        # cls.dtype = dtype
+        # cls.preprocessors = [ImgPreprocessor(X_imgpath=img,
+                                             # y_dirpath=y_dirpath,
+                                             # train_stepover=train_stepover,
+                                             # border=border)
+                             # for img in glob.glob(X_dirpath)[:limit]]
+        # return cls
+
+    def __init__(self, modus='full', random=False, slow=False,
+                 X_dirpath=None, y_dirpath=None, border=3,
+                 train_stepover=8, limit=None, batchsize=None,
+                 dtype='float32'):
+        self.X_dirpath = X_dirpath
+        self.y_dirpath = y_dirpath
+        self.border = border
+        self.train_stepover = train_stepover
+        self.batchsize = batchsize
+        self.limit = limit
+        self.dtype = dtype
+        self.preprocessors = [ImgPreprocessor(X_imgpath=img,
                                              y_dirpath=y_dirpath,
                                              train_stepover=train_stepover,
                                              border=border)
                              for img in glob.glob(X_dirpath)[:limit]]
-        return cls
-
-    def __init__(self, modus='full', random=False, slow=False):
         self.slow = slow
         self.to_modus(modus)
         self.random = random
