@@ -20,34 +20,37 @@ mr.start()
 
 border = 2
 
-BA1 = BatchImgProcessor.load(
-    X_dirpath='../../data/train_cleaned/*',
-    y_dirpath='../../data/train_cleaned/',
-    batchsize=5000,
+pretrain_data = BatchImgProcessor(
+    X_dirpath='../../data/pretrain/*',
+    y_dirpath='../../data/pretrain/',
+    batchsize=500000,
     border=border,
-    limit=1,
-    dtype=theano.config.floatX)
-pretrain_data = BA1(modus='full', random=True)
+    limit=None,
+    dtype=theano.config.floatX,
+    random=True, modus='full')
 
-BA2 = BatchImgProcessor.load(
+training_data = BatchImgProcessor(
     X_dirpath='../../data/train/*',
     y_dirpath='../../data/train_cleaned/',
-    batchsize=5000,
+    batchsize=500000,
     border=border,
-    limit=1,
-    dtype=theano.config.floatX)
+    limit=None,
+    dtype=theano.config.floatX,
+    modus='full', random=True)
 
-BA3 = BatchImgProcessor.load(
+validation_data = BatchImgProcessor.load(
     X_dirpath='../../data/valid/*',
     y_dirpath='../../data/train_cleaned/',
-    batchsize=5000,
+    batchsize=500000,
     border=border,
-    limit=5,
-    dtype=theano.config.floatX)
+    limit=None,
+    dtype=theano.config.floatX,
+    modus='full', random=False)
 
-training_data = BA2(modus='full', random=True)
-validation_data = BA3(modus='full', random=False)
+# training_data = BA2(modus='full', random=True)
+# validation_data = BA3(modus='full', random=False)
 
+print "Pretrain size: %d" % len(training_data)
 print "Training size: %d" % len(training_data)
 print "Validation size: %d" % len(validation_data)
 
@@ -58,8 +61,8 @@ mini_batch_size = 200
 net = Network([
         AutoencoderLayer(n_in=n_in, n_hidden=50, corruption_level=0.2,
             activation_fn=ReLU),
-        # AutoencoderLayer(n_in=80, n_hidden=50, corruption_level=0.4,
-            # activation_fn=ReLU),
+        AutoencoderLayer(n_in=80, n_hidden=50, corruption_level=0.2,
+            activation_fn=ReLU),
         FullyConnectedLayer(n_in=50, n_out=1),
     ], mini_batch_size)
 
