@@ -319,18 +319,19 @@ class AutoencoderLayer():
 
     def __init__(self, n_in=None, n_hidden=None, w=None, b_hid=None,
                  b_vis=None, activation_fn=sigmoid, p_dropout=0.0,
-                 corruption_level=0.0):
+                 corruption_level=0.0, rnd=rnd):
         self.n_in = n_in
         self.n_hidden = n_hidden
         self.activation_fn = activation_fn
         self.p_dropout = p_dropout
-        self.theano_rng = RandomStreams(np.random.randint(2 ** 30))
+        self.theano_rng = RandomStreams(rnd.randint(2 ** 30))
         self.corruption_level = corruption_level
+        self.rnd = rnd
 
         if not w:
             w = theano.shared(
                 np.asarray(
-                    np.random.uniform(
+                    self.rnd.uniform(
                         low=-np.sqrt(6. / (n_in + n_hidden)),
                         high=np.sqrt(6. / (n_in + n_hidden)),
                         size=(n_in, n_hidden)
@@ -340,13 +341,13 @@ class AutoencoderLayer():
 
         if not b_vis:
             b_vis = theano.shared(
-                np.asarray(np.random.normal(loc=0.0, scale=1.0, size=(n_in,)),
+                np.asarray(self.rnd.normal(loc=0.0, scale=1.0, size=(n_in,)),
                            dtype=theano.config.floatX),
                 name='bvis', borrow=True)
 
         if not b_hid:
             b_hid = theano.shared(
-                np.asarray(np.random.normal(loc=0.0, scale=1.0,
+                np.asarray(self.rnd.normal(loc=0.0, scale=1.0,
                                             size=(n_hidden,)),
                            dtype=theano.config.floatX),
                 name='bhid', borrow=True)
@@ -365,7 +366,8 @@ class AutoencoderLayer():
             (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
         self.hidden_output = self.get_hidden_values(self.inpt)
         self.inpt_dropout = dropout_layer(
-            inpt_dropout.reshape((batch_size, self.n_in)), self.p_dropout)
+            inpt_dropout.reshape((batch_size, self.n_in)), self.p_dropout,
+            rnd=self.rnd)
         self.output_dropout = self.activation_fn(
             T.dot(self.inpt_dropout, self.w) + self.b)
 
@@ -495,16 +497,18 @@ class AutoencoderLayer():
 
 class FullyConnectedLayer():
 
-    def __init__(self, n_in, n_out, activation_fn=sigmoid, p_dropout=0.0):
+    def __init__(self, n_in, n_out, activation_fn=sigmoid, p_dropout=0.0,
+                 rnd=rnd):
         self.n_in = n_in
         self.n_out = n_out
         self.activation_fn = activation_fn
         self.p_dropout = p_dropout
+        self.rnd = rnd
 
         # Initialize weights and biases
         self.w = theano.shared(
             np.asarray(
-                np.random.uniform(
+                self.rnd.uniform(
                     low=-np.sqrt(6. / (n_in + n_out)),
                     high=np.sqrt(6. / (n_in + n_out)),
                     size=(n_in, n_out)
@@ -512,7 +516,7 @@ class FullyConnectedLayer():
                 dtype=theano.config.floatX),
             name='w', borrow=True)
         self.b = theano.shared(
-            np.asarray(np.random.normal(loc=0.0, scale=1.0, size=(n_out,)),
+            np.asarray(self.rnd.normal(loc=0.0, scale=1.0, size=(n_out,)),
                        dtype=theano.config.floatX),
             name='b', borrow=True)
         self.params = [self.w, self.b]
@@ -522,7 +526,8 @@ class FullyConnectedLayer():
         self.output = self.activation_fn(
             (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
         self.inpt_dropout = dropout_layer(
-            inpt_dropout.reshape((batch_size, self.n_in)), self.p_dropout)
+            inpt_dropout.reshape((batch_size, self.n_in)), self.p_dropout,
+            rnd=self.rnd)
         self.output_dropout = self.activation_fn(
             T.dot(self.inpt_dropout, self.w) + self.b)
         self.y_out = T.argmax(self.output, axis=1)
@@ -567,9 +572,9 @@ def size(data):
     "Return the size of the dataset `data`."
     return data.get_value(borrow=True).shape[0]
 
-def dropout_layer(layer, p_dropout):
+def dropout_layer(layer, p_dropout, rnd=rnd):
     srng = shared_randomstreams.RandomStreams(
-        np.random.RandomState(0).randint(999999))
+        rnd.randint(999999))
     mask = srng.binomial(n=1, p=1-p_dropout, size=layer.shape)
     return layer*T.cast(mask, theano.config.floatX)
 

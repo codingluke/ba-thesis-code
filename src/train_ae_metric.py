@@ -15,6 +15,8 @@ from preprocessor import BatchImgProcessor
 from engine import Cleaner
 from metric import MetricRecorder
 
+rnd = np.random.RandomState(370824309)
+
 mr = MetricRecorder(config_dir_path='./sae.json')
 mr.start()
 
@@ -27,7 +29,7 @@ pretrain_data = BatchImgProcessor(
     border=border,
     limit=None,
     dtype=theano.config.floatX,
-    random=True, modus='full')
+    random=True, modus='full', rnd=rnd)
 
 training_data = BatchImgProcessor(
     X_dirpath='../../data/train/*',
@@ -36,7 +38,7 @@ training_data = BatchImgProcessor(
     border=border,
     limit=None,
     dtype=theano.config.floatX,
-    modus='full', random=True)
+    modus='full', random=True, rnd=rnd)
 
 validation_data = BatchImgProcessor.load(
     X_dirpath='../../data/valid/*',
@@ -45,7 +47,7 @@ validation_data = BatchImgProcessor.load(
     border=border,
     limit=None,
     dtype=theano.config.floatX,
-    modus='full', random=False)
+    modus='full', random=False, rnd=rnd)
 
 # training_data = BA2(modus='full', random=True)
 # validation_data = BA3(modus='full', random=False)
@@ -60,10 +62,10 @@ mini_batch_size = 200
 
 net = Network([
         AutoencoderLayer(n_in=n_in, n_hidden=50, corruption_level=0.2,
-            activation_fn=ReLU),
+            activation_fn=ReLU, rnd=rnd),
         AutoencoderLayer(n_in=80, n_hidden=50, corruption_level=0.2,
-            activation_fn=ReLU),
-        FullyConnectedLayer(n_in=50, n_out=1),
+            activation_fn=ReLU, rnd=rnd),
+        FullyConnectedLayer(n_in=50, n_out=1, rnd=rnd),
     ], mini_batch_size)
 
 # image = PIL.Image.fromarray(tile_raster_images(
