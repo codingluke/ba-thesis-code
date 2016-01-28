@@ -13,19 +13,12 @@ from numpy.lib.stride_tricks import as_strided as ast
 
 np.random.seed(seed=59842093)
 
-class ImgProcessor(object):
-
-  @staticmethod
-  def image_from_vec(vec, shape):
-      orig = np.reshape(vec, shape) * 255.
-      return PIL.Image.fromarray(orig)
-
 class BatchImgProcessor(object):
 
     def __init__(self, modus='full', random=False, slow=False,
                  X_dirpath=None, y_dirpath=None, border=3,
                  train_stepover=8, limit=None, batchsize=None,
-                 dtype='float32', random_mode='normal'):
+                 dtype='float32', random_mode='normal', rnd=None):
         self.X_dirpath = X_dirpath
         self.y_dirpath = y_dirpath
         self.border = border
@@ -36,7 +29,7 @@ class BatchImgProcessor(object):
         self.preprocessors = [ImgPreprocessor(X_imgpath=img,
                                              y_dirpath=y_dirpath,
                                              train_stepover=train_stepover,
-                                             border=border)
+                                             border=border, rnd=rnd)
                              for img in glob.glob(X_dirpath)[:limit]]
         self.slow = slow
         self.to_modus(modus)
@@ -45,6 +38,7 @@ class BatchImgProcessor(object):
         self.i_preprocessor = 0
         self.buffer = []
         self.random_mode = random_mode
+        self.rnd = rnd
 
     def to_modus(self, modus='full'):
         self.modus = modus
@@ -80,7 +74,7 @@ class BatchImgProcessor(object):
         self.i = 0
         self.i_preprocessor = 0
         self.buffer = []
-        if self.random: np.random.shuffle(self.preprocessors)
+        if self.random: self.rnd.shuffle(self.preprocessors)
 
     def next(self):
         """Gives back the next file data as numpy array. Raise StopIteration
@@ -99,7 +93,7 @@ class BatchImgProcessor(object):
                     self.i_preprocessor += 1
                     if len(self.buffer) >= self.batchsize: break
             batch = np.asarray(self.buffer[:self.batchsize])
-            if self.random: np.random.shuffle(batch)
+            if self.random: self.rnd.shuffle(batch)
             X, y = izip(*batch)
             self.buffer = self.buffer[self.batchsize:]
             return np.asarray(X, dtype=self.dtype),  \
@@ -109,7 +103,7 @@ class BatchImgProcessor(object):
         high = len(self.preprocessors) -1
         X, Y = [], []
         for i in xrange(self.batchsize):
-            rnd = np.random.randint(0, high)
+            rnd = self.rnd.randint(0, high)
             patch = self.preprocessors[rnd].get_random_patch()
             X.append(patch[0])
             Y.append(patch[1])
@@ -120,7 +114,7 @@ class BatchImgProcessor(object):
 class ImgPreprocessor(object):
 
     def __init__(self, X_imgpath=None, y_dirpath=None, border=3,
-                 train_stepover=8):
+                 train_stepover=8, rnd=None):
         assert X_imgpath != None and isinstance(X_imgpath, str)
         # assert y_dirpath != None and isinstance(y_dirpath, str)
 
@@ -130,6 +124,7 @@ class ImgPreprocessor(object):
         self.X_imgpath = X_imgpath
         self.y_dirpath = y_dirpath
         self.stepover = train_stepover
+        self.rnd = rnd
 
     def get_dataset(self, modus=None, slow=False):
         if slow:
@@ -170,14 +165,12 @@ class ImgPreprocessor(object):
             y_imgpath = os.path.join(y_dirpath, name)
             y_img = np.array(PIL.Image.open(y_imgpath)) / 255.
         return X_img, y_img, pixels
-    
+
     def get_random_patch(self, modus=None):
         b = self.border
         height, width = self.X_img.shape
-        _x = np.random.randint(b, height-b)
-        _y = np.random.randint(b, width-b)
-        print _x
-        print _y
+        _x = self.rnd.randint(b, height-b)
+        _y = self.rnd.randint(b, width-b)
         return self.X_img[_x-b:_x+b+1, _y-b:_y+b+1], \
                self.y_img[_x-b,_y-b]
 

@@ -10,6 +10,8 @@ from src.preprocessor import ImgPreprocessor, BatchImgProcessor, TrainRange
 from src.load_data import DataIter
 import config
 
+rnd = np.random.RandomState(232342)
+
 class TestBatchImgProcessor(unittest.TestCase):
 
     def setUp(self):
@@ -20,7 +22,8 @@ class TestBatchImgProcessor(unittest.TestCase):
             border=1,
             limit=None,
             train_stepover=8,
-            modus='full')
+            modus='full',
+            rnd=rnd)
         self.train_batch = BatchImgProcessor(
             X_dirpath='./tests/data/train/*',
             y_dirpath='./tests/data/test/',
@@ -28,7 +31,7 @@ class TestBatchImgProcessor(unittest.TestCase):
             border=1,
             limit=None,
             train_stepover=8,
-            modus='train')
+            modus='train', rnd=rnd)
         self.valid_batch = BatchImgProcessor(
             X_dirpath='./tests/data/train/*',
             y_dirpath='./tests/data/test/',
@@ -36,7 +39,7 @@ class TestBatchImgProcessor(unittest.TestCase):
             border=1,
             limit=None,
             train_stepover=8,
-            modus='valid')
+            modus='valid', rnd=rnd)
         # self.full_batch = self.BatchProcessor()
         # self.train_batch = self.BatchProcessor(modus='train')
         # self.valid_batch = self.BatchProcessor(modus='valid')
@@ -94,7 +97,7 @@ class TestBatchImgProcessor(unittest.TestCase):
             batchsize=50000,
             border=3,
             limit=2,
-            train_stepover=8)
+            train_stepover=8, rnd=rnd)
         # full_slow = BP(random=False, slow=True)
         # full_slow_random = BP(random=True, slow=True)
         # full_fast = BP(random=False, slow=False)
@@ -236,7 +239,7 @@ class TestPreprocessor(unittest.TestCase):
             X_imgpath='./tests/data/valid/noise.png',
             y_dirpath='./tests/data/test/',
             border=1,
-            train_stepover=8)
+            train_stepover=8, rnd=rnd)
 
     def test_sliding_window(self):
         ds1 = self.preprocessor._get_X_fast()
