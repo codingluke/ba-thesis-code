@@ -128,9 +128,22 @@ class TestBatchImgProcessor(unittest.TestCase):
         end = timer()
         print "fast rand:\t\t %d" % (end - start)
 
+        start = timer()
+        bp.random = True
+        bp.random_mode = 'fully'
+        bp.slow = False
+        for X, y in bp: None
+        end = timer()
+
+
+    def test_iterating_fully_random(self):
+        self.train_batch.random_mode = 'fully'
+        fullset = [i for i in self.train_batch]
+        fullset2 = [i for i in self.train_batch]
+
     def test_len(self):
         # Pixels manually calculated according test images
-        pixels = 50*34 / self.full_batch.batchsize
+        pixels = 50*34*3 / self.full_batch.batchsize
         self.assertEqual(len(self.full_batch), pixels)
 
     def test_consitency(self):
@@ -182,6 +195,14 @@ class TestBatchImgProcessor(unittest.TestCase):
         fulll2 = len([x for x in self.full_batch])
         self.assertEqual(fulll, fulll2)
 
+    def test_next_fully_random(self):
+        set = self.train_batch.next_fully_random()
+        set2 = self.train_batch.next()
+
+        self.assertEqual(type(set), type(set2))
+        self.assertEqual(set[0].shape, set2[0].shape)
+        self.assertEqual(set[1].shape, set2[1].shape)
+
     def test_batch_sizes(self):
         eq = True
         for X, y in self.valid_batch:
@@ -226,15 +247,25 @@ class TestPreprocessor(unittest.TestCase):
         y2 = self.preprocessor._get_y()
         pass
 
+    def test_get_random_patch(self):
+        patch = self.preprocessor.get_random_patch()
+        patch2 = self.preprocessor.get_random_patch()
+        patch3 = self.preprocessor.get_random_patch()
+
+        center_index = (len(patch[0]) - 1) / 2
+        self.assertNotEqual(patch[0][center_index], patch2[0][center_index])
+        self.assertNotEqual(patch[0][center_index], patch3[0][center_index])
+        self.assertNotEqual(patch2[0][center_index], patch3[0][center_index])
+
     def test_patchsize_according_bordersize(self):
         # The patch has to have (2*border+1)**2 pixels
         border = 3
-        self.preprocessor.border = border
+        self.preprocessor.set_border(border)
         ds = self.preprocessor.get_dataset()
         self.assertEqual(len(ds[0][0]), (2*border+1)**2)
 
         border = 4
-        self.preprocessor.border = border
+        self.preprocessor.set_border(border)
         ds = self.preprocessor.get_dataset()
         self.assertEqual(len(ds[0][0]), (2*border+1)**2)
 
@@ -265,7 +296,7 @@ class TestPreprocessor(unittest.TestCase):
 
         # Generate Patches
         border = 3
-        self.preprocessor.border = border
+        self.preprocessor.set_border(border)
         X, y = zip(*self.preprocessor.get_dataset())
         center_index = (len(X[0]) - 1) / 2
 
