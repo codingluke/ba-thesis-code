@@ -113,8 +113,9 @@ class BatchImgProcessor(object):
             patch = self.preprocessors[rnd].get_random_patch()
             X.append(patch[0])
             Y.append(patch[1])
-        return np.asarray(X, dtype=self.dtype),  \
-               np.asarray(Y, dtype=self.dtype)
+        l = (2*self.border+1)**2
+        return np.asarray(X, dtype=self.dtype).reshape(self.batchsize, l), \
+               np.asarray(Y, dtype=self.dtype).reshape(self.batchsize, 1)
 
 class ImgPreprocessor(object):
 
@@ -137,13 +138,6 @@ class ImgPreprocessor(object):
             return zip(self._get_X_fast(modus=modus),
                        self._get_y_fast(modus=modus))
 
-    def get_random_patch(self, modus=None):
-        rnd = np.random.randint(0, self.pixels)
-        y = [self.y_img.flatten()[rnd]]
-        size = 2*self.border+1
-        X = sliding_window(self.X_img, (size, size),
-                           (1, 1)).reshape(self.pixels, size**2)[rnd]
-        return X, y
 
     def length(self, modus=None, slow=False):
         if slow:
@@ -173,9 +167,19 @@ class ImgPreprocessor(object):
                 border=self.border, fill=0)) / 255.
         y_img = None
         if y_dirpath:
-          y_imgpath = os.path.join(y_dirpath, name)
-          y_img = np.array(PIL.Image.open(y_imgpath)) / 255.
+            y_imgpath = os.path.join(y_dirpath, name)
+            y_img = np.array(PIL.Image.open(y_imgpath)) / 255.
         return X_img, y_img, pixels
+    
+    def get_random_patch(self, modus=None):
+        b = self.border
+        height, width = self.X_img.shape
+        _x = np.random.randint(b, height-b)
+        _y = np.random.randint(b, width-b)
+        print _x
+        print _y
+        return self.X_img[_x-b:_x+b+1, _y-b:_y+b+1], \
+               self.y_img[_x-b,_y-b]
 
     def _get_y(self, modus=None):
         # ary = np.array(self.y_img) / 255.

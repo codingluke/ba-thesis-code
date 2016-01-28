@@ -134,7 +134,7 @@ class TestBatchImgProcessor(unittest.TestCase):
         bp.slow = False
         for X, y in bp: None
         end = timer()
-
+        print "fully rand:\t\t %d" % (end - start)
 
     def test_iterating_fully_random(self):
         self.train_batch.random_mode = 'fully'
@@ -252,10 +252,16 @@ class TestPreprocessor(unittest.TestCase):
         patch2 = self.preprocessor.get_random_patch()
         patch3 = self.preprocessor.get_random_patch()
 
-        center_index = (len(patch[0]) - 1) / 2
-        self.assertNotEqual(patch[0][center_index], patch2[0][center_index])
-        self.assertNotEqual(patch[0][center_index], patch3[0][center_index])
-        self.assertNotEqual(patch2[0][center_index], patch3[0][center_index])
+        pdb.set_trace()
+
+        patch = patch[0].flatten()
+        patch2 = patch2[0].flatten()
+        patch3 = patch3[0].flatten()
+
+        center_index = (len(patch) - 1) / 2
+        self.assertNotEqual(patch[center_index], patch2[center_index])
+        self.assertNotEqual(patch[center_index], patch3[center_index])
+        self.assertNotEqual(patch2[center_index], patch3[center_index])
 
     def test_patchsize_according_bordersize(self):
         # The patch has to have (2*border+1)**2 pixels
