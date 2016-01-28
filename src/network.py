@@ -1,5 +1,5 @@
 """network3.py
-~~~~~~~~~~~~~~
+aaaaaaa~~~~~~~
 
 A Theano-based program for training and running simple neural
 networks.
@@ -50,6 +50,8 @@ from theano.tensor.nnet import sigmoid
 from theano.tensor import tanh
 
 np.random.seed(45675674)
+
+rnd = np.random.RandomState(123)
 
 #### Main class used to construct and train networks
 class Network():

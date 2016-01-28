@@ -40,10 +40,9 @@ class Cleaner(object):
         patches = p._get_X_fast(modus='full')
         y = self.net.predict(patches)
         y2 = np.vstack(np.array(y).flatten())
-        h, w = p.X_img.size
+        w, h = p.X_img.shape
         orig = np.resize(y2, (w,h)) * 255
-        del p
-        del patches
+        del p, patches
         return PIL.Image.fromarray(orig), id
 
     def clean_and_show(self, img_path=None):

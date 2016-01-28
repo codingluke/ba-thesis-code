@@ -36,7 +36,6 @@ class MetricReader(object):
         df = self.get_records(job_id=job_id, typ='pretrain')
         fig, ax = plt.subplots(1, 1)
         num_trainings = len(df[df['epoch'] == 0])
-        print num_trainings
 
         for i in xrange(num_trainings):
             training = df[df['type'] == 'pretrain_%d' % i]
@@ -112,24 +111,63 @@ class MetricReader(object):
     def plot(self, job_id=None):
         df = self.get_records(job_id=job_id)
         fig, ax = plt.subplots(1, 1)
-        df[['cost', 'validation_accuracy', 'iteration']].plot(x='iteration',
-                                                              y=['cost', 'validation_accuracy'],
-                                                              title="Lernphase Job %d" % job_id,
-                                                              ax=ax,
-                                                              subplots=True)
-        ymin, ymax = ax.get_ylim()
+        m = self.get_job_metadata(job_id=job_id)
+        title = m['layers'].values[0]
+        axs = df[['cost', 'validation_accuracy', 'iteration']].plot(
+                x='iteration',
+                y=['cost', 'validation_accuracy'],
+                title= title,
+                ax=ax,
+                subplots=True)
         epochs = [df[df['epoch']==e]['iteration'].values[-1]
                   for e in xrange(df['epoch'].max())]
-        ax.vlines(x=epochs, ymin=[ymin], ymax=[ymax], label='epochs', linestyle='dotted')
+
+        ymin, ymax = axs[0].get_ylim()
+        axs[0].vlines(x=epochs, ymin=[ymin],
+                      ymax=[ymax], label='epochs',
+                      linestyle='dotted')
+        l = axs[0].legend()
+        l.get_texts()[0].set_text(u"Trainings-Kosten")
+        l.get_texts()[1].set_text(u"Epochen")
+        axs[0].set_ylabel('Cross-Entropy')
+
+        ymin, ymax = axs[1].get_ylim()
+        axs[1].vlines(x=epochs, ymin=[ymin], ymax=[ymax],
+                label=None, linestyle='dotted')
+        l = axs[1].legend()
+        l.get_texts()[0].set_text(u"Validierungs-Kosten")
+        # l.get_texts()[1].set_text(u"Epochen")
+        axs[1].set_ylabel('RMS-Error')
         min = df['validation_accuracy'].min()
         min_val = df[df['validation_accuracy']==min]
         min_x = min_val['iteration'].values[0]
         min_y = min_val['validation_accuracy'].values[0]
-        xmin, xmax = ax.get_xlim()
-        ax.annotate('min at (%f)' % min_y, xy=(min_x, min_y), xytext=(xmax/2, ymax/2),
-                    arrowprops=dict(facecolor='black', shrink=0.05))
-        ax.plot(min_x, min_y, 'o', color="k")
-        ax.legend()
+        xmin, xmax = axs[1].get_xlim()
+        ymin, ymax = axs[1].get_ylim()
+        axs[1].annotate('min at (%f)' % min_y, xy=(min_x, min_y),
+                        xytext=(xmax/2, (ymax+ymin)/2),
+                        arrowprops=dict(facecolor='black', shrink=0.05))
+        axs[1].plot(min_x, min_y, 'o', color="k")
+
+        if len(epochs) > 0:
+            seconds_epoche = int(df[df['iteration']==epochs[0]]['second'].values[0])
+        else: seconds_epoche = 0
+        zeit = '%ds / Epoche' % seconds_epoche
+        m = self.get_job_metadata(job_id=job_id)
+        d = {}
+        for col in m.columns: d[col] = m[col].values[0]
+        tb = axs[1].table(cellText=[[d['algorithm']], [d['eta']],
+                                    [d['lmbda']], [d['dropouts']] ,
+                                    [d['mini_batch_size']],
+                                    [d['training_data']],
+                                    [d['validation_data']],
+                                    [zeit]],
+                 rowLabels=['Algorithmus', 'Lernrate', 'L2', 'Dropout',
+                            'Minibatch', 'Training',
+                            'Validation', 'Zeit'],
+                 colWidths=[0.2, 0.4], cellLoc='left',
+                 loc=None, bbox=[1.25, 0.0, 0.3, 2.2])
+        tb.scale(1.5, 1.5)
         plt.show()
 
     def get_metadata(self):
