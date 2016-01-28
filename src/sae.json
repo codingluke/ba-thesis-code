@@ -4,6 +4,6 @@
 	"name" : "s0545881",
 	"address": "mongodb://s0545881:KNlZmiaNU@hadoop03.f4.htw-berlin.de:27020/s0545881"
     },
-    "experiment-name" : "test-sae"
+    "experiment-name" : "sdA-full"
 }
 

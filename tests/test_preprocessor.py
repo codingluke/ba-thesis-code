@@ -149,6 +149,11 @@ class TestBatchImgProcessor(unittest.TestCase):
         self.assertNotEqual(X[0][center_index], X2[0][center_index])
         self.assertNotEqual(X[-1][center_index], X2[-1][center_index])
 
+        X3, y3 = self.full_batch.next()
+        center_index = (len(X[0]) - 1) / 2
+        self.assertNotEqual(X[0][center_index], X3[0][center_index])
+        self.assertNotEqual(X[-1][center_index], X3[-1][center_index])
+
     def test_train_range_intersec(self):
         valid_range = [x for x in xrange(3,258+6-3,8)]
         train_range = [x for x in TrainRange(3,258+6-3,8)]
