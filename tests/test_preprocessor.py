@@ -40,47 +40,11 @@ class TestBatchImgProcessor(unittest.TestCase):
             limit=None,
             train_stepover=8,
             modus='valid', rnd=rnd)
-        # self.full_batch = self.BatchProcessor()
-        # self.train_batch = self.BatchProcessor(modus='train')
-        # self.valid_batch = self.BatchProcessor(modus='valid')
 
     def tearDown(self):
         del self.full_batch
         del self.train_batch
         del self.valid_batch
-        # del self.BatchProcessor
-
-    def test_multiple_classes(self):
-
-        # BP = BatchImgProcessor.load(
-            # X_dirpath='./tests/data/train/*',
-            # y_dirpath='./tests/data/test/',
-            # batchsize=100,
-            # border=1,
-            # limit=None,
-            # train_stepover=8)
-        # train_batch = BP(modus='full')
-
-        # BP2 = BatchImgProcessor.load(
-            # X_dirpath='./tests/data/valid/*',
-            # y_dirpath='./tests/data/test/',
-            # batchsize=100,
-            # border=1,
-            # limit=None,
-            # train_stepover=8)
-        # valid_batch = BP2(modus='full')
-
-        # pdb.set_trace()
-        None
-
-    # def test_size(self):
-        # BP = BatchImgProcessor.load(
-            # X_dirpath='../data/train/*',
-            # y_dirpath='../data/train_cleaned/',
-            # batchsize=1000000,
-            # border=3,
-            # limit=None,
-            # train_stepover=8)
 
     def test_iterating(self):
         test1 = [(X,y) for X, y in self.train_batch]
@@ -98,10 +62,6 @@ class TestBatchImgProcessor(unittest.TestCase):
             border=3,
             limit=2,
             train_stepover=8, rnd=rnd)
-        # full_slow = BP(random=False, slow=True)
-        # full_slow_random = BP(random=True, slow=True)
-        # full_fast = BP(random=False, slow=False)
-        # full_fast_random = BP(random=True, slow=False)
 
         start = timer()
         bp.random = False
@@ -255,8 +215,6 @@ class TestPreprocessor(unittest.TestCase):
         patch2 = self.preprocessor.get_random_patch()
         patch3 = self.preprocessor.get_random_patch()
 
-        pdb.set_trace()
-
         patch = patch[0].flatten()
         patch2 = patch2[0].flatten()
         patch3 = patch3[0].flatten()
@@ -266,36 +224,47 @@ class TestPreprocessor(unittest.TestCase):
         self.assertNotEqual(patch[center_index], patch3[center_index])
         self.assertNotEqual(patch2[center_index], patch3[center_index])
 
+    def test_fully_random_consistency(self):
+        self.preprocessor._load_images('./tests/data/train/gradient.png',
+            './tests/data/train/')
+        x, y = self.preprocessor.get_random_patch()
+        x = x.flatten()
+        center_index = (len(x) - 1) / 2
+        self.assertEqual(x[center_index], y)
+
+    def test_get_fast_x_consistency(self):
+        self.preprocessor._load_images('./tests/data/train/gradient.png',
+            './tests/data/train/')
+        x = self.preprocessor._get_X_fast()[:2]
+        y = self.preprocessor._get_y_fast()[:2]
+        center_index = (len(x[0]) - 1) / 2
+        self.assertEqual(x[0][center_index], y[0][0])
+        self.assertEqual(x[1][center_index], y[1][0])
+
     def test_patchsize_according_bordersize(self):
         # The patch has to have (2*border+1)**2 pixels
-        border = 3
-        self.preprocessor.set_border(border)
-        ds = self.preprocessor.get_dataset()
-        self.assertEqual(len(ds[0][0]), (2*border+1)**2)
+        for border in [3, 4]:
+            self.preprocessor.set_border(border)
+            ds = self.preprocessor.get_dataset()
+            self.assertEqual(len(ds[0][0]), (2*border+1)**2)
 
-        border = 4
-        self.preprocessor.set_border(border)
-        ds = self.preprocessor.get_dataset()
-        self.assertEqual(len(ds[0][0]), (2*border+1)**2)
-
-        # def test_valid_train_difference(self):
-        # full_set = self.preprocessor.get_dataset()
-        # train_set = self.preprocessor.get_dataset(modus='train')
-        # valid_set = self.preprocessor.get_dataset(modus='valid')
-        # count = 0
-        # for Xv, yv in valid_set:
-          # for Xt, yt in train_set:
-            # eq = np.array_equal(Xv, Xt)
-            # if eq: count += 1; break
-          # if eq: break
-        # self.assertEqual(count, 0)
+    def test_valid_train_difference(self):
+        full_set = self.preprocessor.get_dataset()
+        train_set = self.preprocessor.get_dataset(modus='train')
+        valid_set = self.preprocessor.get_dataset(modus='valid')
+        count = 0
+        for Xv, yv in valid_set:
+          for Xt, yt in train_set:
+            eq = np.array_equal(Xv, Xt)
+            if eq: count += 1; break
+          if eq: break
+        self.assertEqual(count, 0)
 
     def test_patches_amounth(self):
         shape = np.array(PIL.Image.open(self.preprocessor.X_imgpath)).shape
         num_pixels = shape[0] * shape[1]
         num_entires = len(self.preprocessor.get_dataset())
         self.assertEqual(num_entires, num_pixels)
-
 
     def test_center_pixels(self):
         # Prepare test image

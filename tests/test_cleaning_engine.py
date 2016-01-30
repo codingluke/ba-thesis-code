@@ -33,17 +33,17 @@ class TestCleaner(unittest.TestCase):
 
     @unittest.skipUnless(config.slow, 'slow test')
     def test_clean(self):
-        #img = '../data/test/10.png'
-        #PIL.Image.open(img).show()
+        img = '../data/test/10.png'
+        PIL.Image.open(img).show()
 
-        #e = Cleaner('./tests/data/models/13_72000_model.pkl')
-        #e.clean_and_show(img)
+        e = Cleaner('./tests/data/models/13_72000_model.pkl')
+        e.clean_and_show(img)
 
-        #e = Cleaner('./src/model/ae2_90000_model.pkl')
-        #e.clean_and_show(img)
+        e = Cleaner('./src/model/ae2_90000_model.pkl')
+        e.clean_and_show(img)
 
-        #e = Cleaner('./tests/data/models/ae3_213750_model.pkl')
-        #e.clean_and_show(img)
+        e = Cleaner('./tests/data/models/ae3_213750_model.pkl')
+        e.clean_and_show(img)
         pass
 
     def test_to_submission_format(self):

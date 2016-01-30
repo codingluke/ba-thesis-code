@@ -164,6 +164,9 @@ class ImgPreprocessor(object):
         if y_dirpath:
             y_imgpath = os.path.join(y_dirpath, name)
             y_img = np.array(PIL.Image.open(y_imgpath)) / 255.
+        self.X_img = X_img
+        self.y_img = y_img
+        self.pixels = pixels
         return X_img, y_img, pixels
 
     def get_random_patch(self, modus=None):
