@@ -98,19 +98,17 @@ class Network():
     def predict(self, data):
         ext_size = self.batch_size - (data.shape[0] % self.batch_size)
         ext = np.zeros((ext_size, data.shape[1]))
-        ext_data = np.append(data, ext).reshape(data.shape[0]+ext_size,
-                                                  data.shape[1])
-        shared_data = theano.shared(
-            np.asarray(ext_data, dtype=theano.config.floatX),
-            borrow=True)
+        shape = (data.shape[0]+ext_size, data.shape[1])
+        shared_data = tshared(np.append(data, ext).reshape(shape))
         i = T.lscalar() # mini-batch index
         predict = theano.function([i],
             outputs=self.layers[-1].output,
             givens={ self.x: shared_data[i*self.batch_size: \
                                          (i+1)* self.batch_size] })
-        num_batches = ext_data.shape[0] / self.batch_size
+        num_batches = shape[0] / self.batch_size
         out = np.asarray([predict(j) for j in xrange(num_batches)])
-        return out.reshape(ext_data.shape[0],out.shape[2])[:-ext_size]
+        del shared_data
+        return out.reshape(shape[0],out.shape[2])[:-ext_size]
 
     def save(self, filename='model.pkl'):
         f = open(filename, 'wb')
@@ -258,12 +256,8 @@ class Network():
             for train_x, train_y in training_data:
                 train_it += 1
                 if done_looping: break
-                #training_x = tshared(train_x)
-                #training_y = tshared(train_y)
                 training_x.set_value(train_x, borrow=True)
                 training_y.set_value(train_y, borrow=True)
-                #print train_it
-                #print train_x[0]
                 for minibatch_index in xrange(num_training_batches):
                     iteration += 1
                     cost += train_mb(minibatch_index)
@@ -272,8 +266,6 @@ class Network():
                         for valid_x, valid_y in validation_data:
                             validation_x.set_value(valid_x, borrow=True)
                             validation_y.set_value(valid_y, borrow=True)
-                            #validation_x = tshared(valid_x)
-                            #validation_y = tshared(valid_y)
                             valid_acc.append(
                                     [validate_mb_accuracy(j)
                                      for j in xrange(num_validation_batches)])
@@ -333,28 +325,21 @@ class AutoencoderLayer():
         self.rnd = rnd
 
         if not w:
-            w = theano.shared(
-                np.asarray(
-                    self.rnd.uniform(
+            w = tshared(self.rnd.uniform(
                         low=-np.sqrt(6. / (n_in + n_hidden)),
                         high=np.sqrt(6. / (n_in + n_hidden)),
                         size=(n_in, n_hidden)
-                    ),
-                    dtype=theano.config.floatX),
-                name='w', borrow=True)
+                    ), 'w')
 
         if not b_vis:
-            b_vis = theano.shared(
-                np.asarray(self.rnd.normal(loc=0.0, scale=1.0, size=(n_in,)),
-                           dtype=theano.config.floatX),
-                name='bvis', borrow=True)
+            b_vis = tshared(self.rnd.normal(loc=0.0, scale=1.0,
+                                            size=(n_in,)),
+                            'bvis')
 
         if not b_hid:
-            b_hid = theano.shared(
-                np.asarray(self.rnd.normal(loc=0.0, scale=1.0,
+            b_hid = tshared(self.rnd.normal(loc=0.0, scale=1.0,
                                             size=(n_hidden,)),
-                           dtype=theano.config.floatX),
-                name='bhid', borrow=True)
+                            'bhid')
 
         self.w = w # shared weights
         self.b = b_hid # bias for normal layer
@@ -391,9 +376,7 @@ class AutoencoderLayer():
                                   dtype=theano.config.floatX) * self.inpt
 
     def forward(self, data, batch_size=500):
-        shared_data = theano.shared(
-            np.asarray(data, dtype=theano.config.floatX),
-            borrow=True)
+        shared_data = tshared(data)
         i = T.lscalar() # mini-batch index
         fwd = theano.function(
             [i], self.hidden_output,
@@ -403,6 +386,7 @@ class AutoencoderLayer():
             })
         num_batches = len(data)/batch_size
         out = np.asarray([fwd(j) for j in xrange(num_batches)])
+        del shared_data
         return out.reshape(out.shape[0] * out.shape[1], out.shape[2])
 
 
@@ -509,19 +493,13 @@ class FullyConnectedLayer():
         self.rnd = rnd
 
         # Initialize weights and biases
-        self.w = theano.shared(
-            np.asarray(
-                self.rnd.uniform(
+        self.w = tshared(self.rnd.uniform(
                     low=-np.sqrt(6. / (n_in + n_out)),
                     high=np.sqrt(6. / (n_in + n_out)),
                     size=(n_in, n_out)
-                ),
-                dtype=theano.config.floatX),
-            name='w', borrow=True)
-        self.b = theano.shared(
-            np.asarray(self.rnd.normal(loc=0.0, scale=1.0, size=(n_out,)),
-                       dtype=theano.config.floatX),
-            name='b', borrow=True)
+                ), 'w')
+        self.b = tshared(self.rnd.normal(loc=0.0, scale=1.0, size=(n_out,)),
+                         'b')
         self.params = [self.w, self.b]
 
     def set_inpt(self, inpt, inpt_dropout, batch_size):
@@ -581,6 +559,6 @@ def dropout_layer(layer, p_dropout, rnd=None):
     mask = srng.binomial(n=1, p=1-p_dropout, size=layer.shape)
     return layer*T.cast(mask, theano.config.floatX)
 
-def tshared(data):
+def tshared(data, name=None):
     dtype = theano.config.floatX
-    return theano.shared(np.asarray(data, dtype=dtype),  borrow=True)
+    return theano.shared(np.asarray(data, dtype=dtype), name=name, borrow=True)
