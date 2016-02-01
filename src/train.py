@@ -10,79 +10,46 @@ from timeit import default_timer as timer
 
 from network import Network, FullyConnectedLayer, tanh, ReLU
 from preprocessor import BatchImgProcessor
+from metric import MetricRecorder
+
+rnd = np.random.RandomState()
+
+mr = MetricRecorder(config_dir_path='./simple.json')
+mr.start()
 
 border = 2
 
-BatchProcessor = BatchImgProcessor.load(
-    X_dirpath='../../data/train/*',
+training_data = BatchImgProcessor(
+    X_dirpath='../../data/onetext_train_small/*',
     y_dirpath='../../data/train_cleaned/',
-    batchsize=50000,
-    border=border,
-    limit=5,
-    train_stepover=8,
-    dtype=theano.config.floatX)
-training_data = BatchProcessor(modus='train', random=True)
-validation_data = BatchProcessor(modus='valid')
-print "Training size: %d" % len(training_data)
-print "Validation size: %d" % len(validation_data)
+    batchsize=500000, border=border, limit=None,
+    random=True, random_mode='fully', modus='full',
+    dtype=theano.config.floatX, rnd=rnd)
 
-n_in = (2*border+1)**2
+validation_data = BatchImgProcessor(
+    X_dirpath='../../data/onetext_valid_small/*',
+    y_dirpath='../../data/train_cleaned/',
+    batchsize=50000, border=border, limit=None,
+    random=False, modus='full', rnd=rnd,
+    dtype=theano.config.floatX)
+
+print "Job ID: %d" % mr.job_id
+save_dir = "./model/%s_%d_" % (mr.experiment_name, mr.job_id)
+print "Save Dir: " + save_dir
 
 start = timer()
-mini_batch_size = 200
+mbs = 500
 net = Network([
-        FullyConnectedLayer(n_in=n_in, n_out=200, activation_fn=ReLU,
-          p_dropout=0.1),
-        FullyConnectedLayer(n_in=200, n_out=100, activation_fn=ReLU,
-          p_dropout=0.1),
-        FullyConnectedLayer(n_in=100, n_out=50, activation_fn=ReLU,
-          p_dropout=0.1),
-        FullyConnectedLayer(n_in=50, n_out=1, p_dropout=0.1)
-    ], mini_batch_size)
+        FullyConnectedLayer(n_in=(2*border+1)**2, n_out=80, rnd=rnd),
+        FullyConnectedLayer(n_in=80, n_out=1, rnd=rnd)
+    ], mbs)
 
 print '...start training'
-net.SGD(training_data=training_data, epochs=3,
-        batch_size=mini_batch_size, eta=0.025,
+cost = net.SGD(training_data=training_data, epochs=4,
+        batch_size=mbs, eta=0.02,
         validation_data=validation_data, lmbda=0.0,
-        momentum=0.95, patience=20000, patience_increase=2,
-        improvement_threshold=0.995, validation_frequency=2,
-        save_dir='./model/meta_')
-end = timer()
-print "Zeit : %d" % (end-start)
-
-f = open('model_b4_l144_bs20000000.pkl', 'wb')
-cPickle.dump(net, f)
-f = open('model_b4_l144_bs20000000.pkl', 'rb')
-net = cPickle.load(f)
-
-test_x = np.array(l.x_from_image('../../data/test/1.png', border=border))
-y = net.predict(test_x)
-y2 = np.vstack(np.array(y).flatten())
-orig = np.resize(y2, (258, 540)) * 255
-img = PIL.Image.fromarray(orig)
-img.show()
-img.convert('L').save('1_cleaned.png', 'PNG')
-
-test_x = np.array(l.x_from_image('../../data/test/4.png', border=border))
-y = net.predict(test_x)
-y2 = np.vstack(np.array(y).flatten())
-orig = np.resize(y2, (258, 540)) * 255
-img = PIL.Image.fromarray(orig)
-img.show()
-img.convert('L').save('4_cleaned.png', 'PNG')
-
-test_x = np.array(l.x_from_image('../../data/test/7.png', border=border))
-y = net.predict(test_x)
-y2 = np.vstack(np.array(y).flatten())
-orig = np.resize(y2, (258, 540)) * 255
-img = PIL.Image.fromarray(orig)
-img.show()
-img.convert('L').save('7_cleaned.png', 'PNG')
-
-test_x = np.array(l.x_from_image('../../data/test/10.png', border=border))
-y = net.predict(test_x)
-y2 = np.vstack(np.array(y).flatten())
-orig = np.resize(y2, (258, 540)) * 255
-img = PIL.Image.fromarray(orig)
-img.show()
-img.convert('L').save('10_cleaned.png', 'PNG')
+        momentum=0.95, patience_increase=2,
+        improvement_threshold=0.995, validation_frequency=20,
+        save_dir=save_dir, metric_recorder=mr,
+        algorithm='rmsprop', early_stoping=False)
+print "Zeit : %d" % mr.stop()

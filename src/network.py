@@ -49,9 +49,6 @@ def ReLU(z): return T.maximum(0.0, z)
 from theano.tensor.nnet import sigmoid
 from theano.tensor import tanh
 
-np.random.seed(45675674)
-
-rnd = np.random.RandomState(123)
 
 #### Main class used to construct and train networks
 class Network():
@@ -168,7 +165,7 @@ class Network():
             eta=0.025, validation_data=None, lmbda=0.0, momentum=0.0,
             patience=40000, patience_increase=2, improvement_threshold=0.995,
             validation_frequency=1, metric_recorder=None, save_dir=None,
-            algorithm='rmsprop'):
+            algorithm='rmsprop', early_stoping=True):
         """Train the network using mini-batch stochastic gradient descent."""
 
         if not validation_data or len(validation_data) < 1:
@@ -252,31 +249,37 @@ class Network():
         validation_frequency = int(val_per_epochs/ validation_frequency)
         patience = validation_frequency * 4
 
+        cost = 0
         iteration = 0
         for epoch in xrange(epochs):
             if done_looping: break
-            train_itr = 0
+            train_it = 0
             for train_x, train_y in training_data:
+                train_it += 1
                 if done_looping: break
-                train_itr += 1
-                training_x = tshared(train_x)
-                training_y = tshared(train_y)
+                #training_x = tshared(train_x)
+                #training_y = tshared(train_y)
+                training_x.set_value(train_x, borrow=True)
+                training_y.set_value(train_y, borrow=True)
+                #print train_it
+                #print train_x[0]
                 for minibatch_index in xrange(num_training_batches):
-
                     iteration += 1
-                    cost = train_mb(minibatch_index)
-
+                    cost += train_mb(minibatch_index)
                     if iteration % validation_frequency == 0:
                         valid_acc = []
                         for valid_x, valid_y in validation_data:
-                            validation_x = tshared(valid_x)
-                            validation_y = tshared(valid_y)
+                            validation_x.set_value(valid_x, borrow=True)
+                            validation_y.set_value(valid_y, borrow=True)
+                            #validation_x = tshared(valid_x)
+                            #validation_y = tshared(valid_y)
                             valid_acc.append(
                                     [validate_mb_accuracy(j)
                                      for j in xrange(num_validation_batches)])
                         validation_accuracy = np.mean(valid_acc)
+                        train_cost = cost / iteration
                         if metric_recorder:
-                            metric_recorder.record(cost=cost,
+                            metric_recorder.record(cost=train_cost,
                                 validation_accuracy=validation_accuracy,
                                 epoch=epoch, iteration=iteration)
 
@@ -300,7 +303,7 @@ class Network():
                                     iteration, patience)
                             best_validation_accuracy = validation_accuracy
 
-                    if patience <= iteration:
+                    if patience <= iteration and early_stoping:
                         print "iter %i" % iteration
                         print "patience %i" % patience
                         print 'break'
@@ -319,7 +322,7 @@ class AutoencoderLayer():
 
     def __init__(self, n_in=None, n_hidden=None, w=None, b_hid=None,
                  b_vis=None, activation_fn=sigmoid, p_dropout=0.0,
-                 corruption_level=0.0, rnd=rnd):
+                 corruption_level=0.0, rnd=None):
         self.n_in = n_in
         self.n_hidden = n_hidden
         self.activation_fn = activation_fn
@@ -498,7 +501,7 @@ class AutoencoderLayer():
 class FullyConnectedLayer():
 
     def __init__(self, n_in, n_out, activation_fn=sigmoid, p_dropout=0.0,
-                 rnd=rnd):
+                 rnd=None):
         self.n_in = n_in
         self.n_out = n_out
         self.activation_fn = activation_fn
@@ -572,7 +575,7 @@ def size(data):
     "Return the size of the dataset `data`."
     return data.get_value(borrow=True).shape[0]
 
-def dropout_layer(layer, p_dropout, rnd=rnd):
+def dropout_layer(layer, p_dropout, rnd=None):
     srng = shared_randomstreams.RandomStreams(
         rnd.randint(999999))
     mask = srng.binomial(n=1, p=1-p_dropout, size=layer.shape)

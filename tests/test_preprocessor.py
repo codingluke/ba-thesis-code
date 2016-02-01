@@ -94,14 +94,10 @@ class TestBatchImgProcessor(unittest.TestCase):
         bp = BatchImgProcessor(
             X_dirpath='../data/train/*',
             y_dirpath='../data/train_cleaned/',
-            batchsize=50000,
-            border=3,
-            limit=2,
-            train_stepover=8, rnd=rnd)
-        # full_slow = BP(random=False, slow=True)
-        # full_slow_random = BP(random=True, slow=True)
-        # full_fast = BP(random=False, slow=False)
-        # full_fast_random = BP(random=True, slow=False)
+            batchsize=4000000,
+            border=2,
+            limit=None,
+            rnd=rnd)
 
         start = timer()
         bp.random = False
@@ -254,8 +250,6 @@ class TestPreprocessor(unittest.TestCase):
         patch = self.preprocessor.get_random_patch()
         patch2 = self.preprocessor.get_random_patch()
         patch3 = self.preprocessor.get_random_patch()
-
-        pdb.set_trace()
 
         patch = patch[0].flatten()
         patch2 = patch2[0].flatten()
