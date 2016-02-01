@@ -164,7 +164,7 @@ class Network():
             eta=0.025, validation_data=None, lmbda=0.0, momentum=0.0,
             patience=40000, patience_increase=2, improvement_threshold=0.995,
             validation_frequency=1, metric_recorder=None, save_dir=None,
-            algorithm='rmsprop', early_stoping=True):
+            algorithm='rmsprop', early_stoping=True, eta_min=None):
         """Train the network using mini-batch stochastic gradient descent."""
 
         if not validation_data or len(validation_data) < 1:
@@ -173,7 +173,9 @@ class Network():
         # Save metainfo for later
         self.meta = {
           'mini_batch_size' : batch_size,
+          'random_mode' : training_data.random_mode,
           'eta' : eta,
+          'eta_min' : eat_min,
           'lmbda' : lmbda,
           'momentum' : momentum,
           'patience_increase' : patience_increase,
@@ -248,11 +250,14 @@ class Network():
         validation_frequency = int(val_per_epochs/ validation_frequency)
         patience = validation_frequency * 4
 
+        if not eta_min: eta_min = eta
+        etas = np.linspace(eta, eta_min, epochs)
         cost = 0
         iteration = 0
         for epoch in xrange(epochs):
             if done_looping: break
             train_it = 0
+            eta = eta[epoch]
             for train_x, train_y in training_data:
                 train_it += 1
                 if done_looping: break
