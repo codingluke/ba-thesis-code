@@ -387,12 +387,10 @@ class AutoencoderLayer():
                                   p=1 - self.corruption_level,
                                   dtype=theano.config.floatX) * self.inpt
 
-    def forward(self, data, batch_size=200):
-
+    def forward(self, data, batch_size=500):
         shared_data = theano.shared(
             np.asarray(data, dtype=theano.config.floatX),
             borrow=True)
-
         i = T.lscalar() # mini-batch index
         fwd = theano.function(
             [i], self.hidden_output,
@@ -463,7 +461,7 @@ class AutoencoderLayer():
             c = []
             for train_x, _ in training_data:
                 for l in ff_layers: train_x = l.forward(train_x)
-                training_x = tshared(train_x)
+                training_x.set_value(train_x, borrow=True)
                 for batch_index in xrange(num_training_batches):
                     c.append(train_mb(batch_index))
 
