@@ -99,20 +99,21 @@ class Network():
         if meta: self.meta = meta
 
     def predict(self, data):
+        ext_size = self.batch_size - (data.shape[0] % self.batch_size)
+        ext = np.zeros((ext_size, data.shape[1]))
+        ext_data = np.append(data, ext).reshape(data.shape[0]+ext_size,
+                                                  data.shape[1])
         shared_data = theano.shared(
-            np.asarray(data, dtype=theano.config.floatX),
+            np.asarray(ext_data, dtype=theano.config.floatX),
             borrow=True)
-
         i = T.lscalar() # mini-batch index
-        predictions = theano.function(
-            [i], self.layers[-1].output,
-            givens={
-                self.x:
-                shared_data[i*self.batch_size: (i+1)*self.batch_size]
-            })
-
-        num_batches = len(data)/self.batch_size
-        return [predictions(j) for j in xrange(num_batches)]
+        predict = theano.function([i],
+            outputs=self.layers[-1].output,
+            givens={ self.x: shared_data[i*self.batch_size: \
+                                         (i+1)* self.batch_size] })
+        num_batches = ext_data.shape[0] / self.batch_size
+        out = np.asarray([predict(j) for j in xrange(num_batches)])
+        return out.reshape(ext_data.shape[0],out.shape[2])[:-ext_size]
 
     def save(self, filename='model.pkl'):
         f = open(filename, 'wb')
@@ -387,6 +388,7 @@ class AutoencoderLayer():
                                   dtype=theano.config.floatX) * self.inpt
 
     def forward(self, data, batch_size=200):
+
         shared_data = theano.shared(
             np.asarray(data, dtype=theano.config.floatX),
             borrow=True)

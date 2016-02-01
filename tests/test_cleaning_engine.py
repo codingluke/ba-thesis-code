@@ -31,7 +31,7 @@ class TestBatchCleaner(unittest.TestCase):
 
 class TestCleaner(unittest.TestCase):
 
-    @unittest.skipUnless(config.slow, 'slow test')
+    # @unittest.skipUnless(config.slow, 'slow test')
     def test_clean(self):
         img = '../data/test/10.png'
         PIL.Image.open(img).show()
