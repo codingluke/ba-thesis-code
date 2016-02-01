@@ -41,7 +41,7 @@ class Cleaner(object):
         y = self.net.predict(patches)
         y2 = np.vstack(np.array(y).flatten())
         w, h = p.X_img.shape
-        orig = np.resize(y2, (w,h)) * 255
+        orig = np.resize(y2, (w-2*self.border,h-2*self.border)) * 255
         del p, patches
         return PIL.Image.fromarray(orig), id
 
