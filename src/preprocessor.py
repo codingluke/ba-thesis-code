@@ -11,8 +11,6 @@ import pdb
 from itertools import izip
 from numpy.lib.stride_tricks import as_strided as ast
 
-np.random.seed(seed=59842093)
-
 class BatchImgProcessor(object):
 
     def __init__(self, modus='full', random=False, slow=False,

@@ -15,7 +15,7 @@ from preprocessor import BatchImgProcessor
 from engine import Cleaner
 from metric import MetricRecorder
 
-rnd = np.random.RandomState(370824309)
+rnd = np.random.RandomState()
 
 mr = MetricRecorder(config_dir_path='./sae.json')
 mr.start()
@@ -25,22 +25,24 @@ border = 2
 pretrain_data = BatchImgProcessor(
     X_dirpath='../../data/pretrain/*',
     y_dirpath='../../data/pretrain/',
-    batchsize=500000,
+    batchsize=4000000,
     border=border,
     limit=None,
     dtype=theano.config.floatX,
+    random_mode='fully',
     random=True, modus='full', rnd=rnd)
 
 training_data = BatchImgProcessor(
     X_dirpath='../../data/train/*',
     y_dirpath='../../data/train_cleaned/',
-    batchsize=500000,
+    batchsize=4000000,
     border=border,
     limit=None,
     dtype=theano.config.floatX,
+    random_mode='fully',
     modus='full', random=True, rnd=rnd)
 
-validation_data = BatchImgProcessor.load(
+validation_data = BatchImgProcessor(
     X_dirpath='../../data/valid/*',
     y_dirpath='../../data/train_cleaned/',
     batchsize=500000,
@@ -61,9 +63,9 @@ n_in = (2*border+1)**2
 mini_batch_size = 200
 
 net = Network([
-        AutoencoderLayer(n_in=n_in, n_hidden=50, corruption_level=0.2,
+        AutoencoderLayer(n_in=n_in, n_hidden=80, corruption_level=0.3,
             activation_fn=ReLU, rnd=rnd),
-        AutoencoderLayer(n_in=80, n_hidden=50, corruption_level=0.2,
+        AutoencoderLayer(n_in=80, n_hidden=50, corruption_level=0.3,
             activation_fn=ReLU, rnd=rnd),
         FullyConnectedLayer(n_in=50, n_out=1, rnd=rnd),
     ], mini_batch_size)
@@ -81,16 +83,16 @@ print '...start pretraining'
 net.pretrain_autoencoders(
     training_data=pretrain_data,
     batch_size=mini_batch_size,
-    eta=0.01, epochs=2,
+    eta=0.01, epochs=4,
     metric_recorder=mr, save_dir=save_dir)
 
 training_data.reset()
 print '...start training'
-net.SGD(training_data=training_data, epochs=2,
+net.SGD(training_data=training_data, epochs=5,
         batch_size=mini_batch_size, eta=0.01,
         validation_data=validation_data, lmbda=0.0,
         momentum=0.0, patience=20000, patience_increase=2,
-        improvement_threshold=0.995, validation_frequency=2,
+        improvement_threshold=0.995, validation_frequency=30,
         save_dir=save_dir, metric_recorder=mr, algorithm='rmsprop')
 
 print "Zeit : %d" % mr.stop()

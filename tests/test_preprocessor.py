@@ -58,10 +58,10 @@ class TestBatchImgProcessor(unittest.TestCase):
         bp = BatchImgProcessor(
             X_dirpath='../data/train/*',
             y_dirpath='../data/train_cleaned/',
-            batchsize=50000,
-            border=3,
-            limit=2,
-            train_stepover=8, rnd=rnd)
+            batchsize=4000000,
+            border=2,
+            limit=None,
+            rnd=rnd)
 
         start = timer()
         bp.random = False
