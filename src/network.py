@@ -75,6 +75,7 @@ class Network():
         self.output = self.layers[-1].output
         self.output_dropout = self.layers[-1].output_dropout
         self.meta = {}
+        self.eta = 0.02
 
     def __getstate__(self):
         return (self.layers, self.batch_size,
@@ -126,7 +127,7 @@ class Network():
                      metric_recorder=metric_recorder, level=index)
         if save_dir: self.save(save_dir + "pretrained_model.pkl")
 
-    def rms_prop(self, grads, eta):
+    def rms_prop(self, grads):
         rho = 0.9
         epsilon = 1e-6
         updates = []
@@ -137,12 +138,12 @@ class Network():
             gradient_scaling = T.sqrt(acc_new + epsilon)
             g = g / gradient_scaling
             updates.append((acc, acc_new))
-            updates.append((p, T.cast(p - eta * g, theano.config.floatX)))
+            updates.append((p, T.cast(p - self.eta * g, theano.config.floatX)))
         return updates
 
     def naive_sgd(self, grads=None, eta=None, momentum=0.0):
         if momentum == 0.0:
-            return [(param, param-eta * grad)
+            return [(param, param-self.eta * grad)
                     for param, grad in zip(self.params, grads)]
         else:
             updates = []
@@ -150,7 +151,7 @@ class Network():
             for param, grad in zip(self.params, grads):
                 v = theano.shared(param.get_value() * 0.,
                                   broadcastable=param.broadcastable)
-                updates.append((param, param - eta * v))
+                updates.append((param, param - self.eta * v))
                 updates.append((v, m * v + (1. - m) * grad))
             return updates
 
@@ -217,9 +218,9 @@ class Network():
         # define update rules
         updates = []
         if algorithm == 'rmsprop':
-            updates = self.rms_prop(grads, eta)
+            updates = self.rms_prop(grads)
         elif algorithm == 'sgd':
-            updates = self.naive_sgd(grads, eta, momentum=momentum)
+            updates = self.naive_sgd(grads, momentum=momentum)
 
         # define functions to train a mini-batch, and to compute the
         # accuracy in validation and test mini-batches.
@@ -257,7 +258,7 @@ class Network():
         for epoch in xrange(epochs):
             if done_looping: break
             train_it = 0
-            eta = eta[epoch]
+            self.eta = eta[epoch] # Update eta
             for train_x, train_y in training_data:
                 train_it += 1
                 if done_looping: break
