@@ -75,7 +75,6 @@ class Network():
         self.output = self.layers[-1].output
         self.output_dropout = self.layers[-1].output_dropout
         self.meta = {}
-        self.eta = 0.02
 
     def __getstate__(self):
         return (self.layers, self.batch_size,
@@ -127,7 +126,7 @@ class Network():
                      metric_recorder=metric_recorder, level=index)
         if save_dir: self.save(save_dir + "pretrained_model.pkl")
 
-    def rms_prop(self, grads):
+    def rms_prop(self, grads, lr):
         rho = 0.9
         epsilon = 1e-6
         updates = []
@@ -138,12 +137,12 @@ class Network():
             gradient_scaling = T.sqrt(acc_new + epsilon)
             g = g / gradient_scaling
             updates.append((acc, acc_new))
-            updates.append((p, T.cast(p - self.eta * g, theano.config.floatX)))
+            updates.append((p, T.cast(p - lr * g, theano.config.floatX)))
         return updates
 
-    def naive_sgd(self, grads=None, eta=None, momentum=0.0):
+    def naive_sgd(self, grads=None, lr=None, momentum=0.0):
         if momentum == 0.0:
-            return [(param, param-self.eta * grad)
+            return [(param, param-lr * grad)
                     for param, grad in zip(self.params, grads)]
         else:
             updates = []
@@ -151,7 +150,7 @@ class Network():
             for param, grad in zip(self.params, grads):
                 v = theano.shared(param.get_value() * 0.,
                                   broadcastable=param.broadcastable)
-                updates.append((param, param - self.eta * v))
+                updates.append((param, param - lr * v))
                 updates.append((v, m * v + (1. - m) * grad))
             return updates
 
@@ -216,23 +215,24 @@ class Network():
         grads = T.grad(cost=cost, wrt=self.params)
 
         # define update rules
+        lr = T.scalar()
         updates = []
         if algorithm == 'rmsprop':
-            updates = self.rms_prop(grads)
+            updates = self.rms_prop(grads, lr)
         elif algorithm == 'sgd':
-            updates = self.naive_sgd(grads, momentum=momentum)
+            updates = self.naive_sgd(grads, lr, momentum=momentum)
 
         # define functions to train a mini-batch, and to compute the
         # accuracy in validation and test mini-batches.
         i = T.lscalar() # mini-batch index
         train_mb = theano.function(
-            [i], cost, updates=updates,
+            [i, lr], cost, updates=updates,
             givens={
                 self.x:
                 training_x[i*self.batch_size: (i+1)*self.batch_size],
                 self.y:
                 training_y[i*self.batch_size: (i+1)*self.batch_size]
-            })
+            }, allow_input_downcast=True)
 
         validate_mb_accuracy = theano.function(
             [i], self.layers[-1].accuracy(self.y),
@@ -258,7 +258,7 @@ class Network():
         for epoch in xrange(epochs):
             if done_looping: break
             train_it = 0
-            self.eta = etas[epoch] # Update eta
+            eta = etas[epoch] # Update eta
             for train_x, train_y in training_data:
                 train_it += 1
                 if done_looping: break
@@ -266,7 +266,7 @@ class Network():
                 training_y.set_value(train_y, borrow=True)
                 for minibatch_index in xrange(num_training_batches):
                     iteration += 1
-                    cost += train_mb(minibatch_index)
+                    cost += train_mb(minibatch_index, eta)
                     if iteration % validation_frequency == 0:
                         valid_acc = []
                         for valid_x, valid_y in validation_data:
