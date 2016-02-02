@@ -46,7 +46,7 @@ net = Network([
 
 print '...start training'
 cost = net.SGD(training_data=training_data, epochs=4,
-        batch_size=mbs, eta=0.02,
+        batch_size=mbs, eta=0.001, eta_min=None,
         validation_data=validation_data, lmbda=0.0,
         momentum=0.95, patience_increase=2,
         improvement_threshold=0.995, validation_frequency=20,

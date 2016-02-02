@@ -175,7 +175,7 @@ class Network():
           'mini_batch_size' : batch_size,
           'random_mode' : training_data.random_mode,
           'eta' : eta,
-          'eta_min' : eat_min,
+          'eta_min' : eta_min,
           'lmbda' : lmbda,
           'momentum' : momentum,
           'patience_increase' : patience_increase,
@@ -257,7 +257,7 @@ class Network():
         for epoch in xrange(epochs):
             if done_looping: break
             train_it = 0
-            eta = eta[epoch]
+            eta = etas[epoch]
             for train_x, train_y in training_data:
                 train_it += 1
                 if done_looping: break
