@@ -108,6 +108,61 @@ class MetricReader(object):
         plt.show()
 
 
+    def compair_plot(self, job_ids = [], colors=['r', 'g', 'b'],
+                     titles=[1, 2, 3]):
+        df = pd.DataFrame()
+        title = 'Trainingsverlauf Vergleiche'
+        ax = None
+        cols = []
+        for index, job in enumerate(job_ids):
+          tmp = self.get_records(job_id=job)
+          tmp = tmp[['cost', 'validation_accuracy', 'epoch', 'iteration']]
+          tmp.columns = ['Trainingskosten-%s' % titles[index],
+                        'Validierungskosten-%s' % titles[index],
+                        'epoch', 'iteration']
+          cols.append('Validierungskosten-%s' % titles[index])
+          num_per_epoch = len(tmp[tmp['epoch']==0])
+          max_epoche = tmp['epoch'].values.max()
+          tmp['Epochen'] = pd.Series(np.linspace(1./num_per_epoch,
+                                                 max_epoche, len(tmp)),
+                                     index=tmp.index)
+          df = df.append(tmp)
+          ax = df.plot(
+                  x='Epochen',
+                  y=['Trainingskosten-%s' % titles[index],
+                     'Validierungskosten-%s' % titles[index]],
+                  ax=ax, subplots=True, layout=(1,2),
+                  figsize=(9,4.5),
+                  color=[colors[index], colors[index]])
+        plt.subplots_adjust(wspace=0.3, hspace=0.3);
+
+        ax[0].set_title('Trainingskosten')
+        ax[0].set_ylabel('Cross-Entropy')
+        ax[1].set_title('Validierungskosten')
+        ax[1].set_ylabel('Root-Mean-Square')
+        # ax[1].yaxis.set_label_coords(5.1, 0)
+        l = ax[0].legend()
+        l2 = ax[1].legend()
+        for i in xrange(len(job_ids)):
+            l.get_texts()[i].set_text(titles[i])
+            l2.get_texts()[i].set_text(titles[i])
+
+        min = df[cols].min().values.min()
+        min_val_col = ''
+        for c in cols:
+          if len(df[df[c]==min]) > 0: min_val_col = c
+        min = df[df[min_val_col]==min]
+        min_x = min['Epochen'].values[0]
+        min_y = min[min_val_col].values[0]
+        xmin, xmax = ax[1].get_xlim()
+        ymin, ymax = ax[1].get_ylim()
+
+        ax[1].annotate('Minimum (%f)' % min_y, xy=(min_x, min_y),
+                        xytext=(xmax/2, (ymax+ymin)/2),
+                        arrowprops=dict(facecolor='black', shrink=0.05))
+        ax[1].plot(min_x, min_y, 'o', color="k")
+
+
     def plot(self, job_id=None):
         df = self.get_records(job_id=job_id)
         fig, ax = plt.subplots(1, 1)
@@ -116,9 +171,7 @@ class MetricReader(object):
         axs = df[['cost', 'validation_accuracy', 'iteration']].plot(
                 x='iteration',
                 y=['cost', 'validation_accuracy'],
-                title= title,
-                ax=ax,
-                subplots=True)
+                title= title, ax=ax, subplots=True)
         epochs = [df[df['epoch']==e]['iteration'].values[-1]
                   for e in xrange(df['epoch'].max())]
 
@@ -136,7 +189,6 @@ class MetricReader(object):
                 label=None, linestyle='dotted')
         l = axs[1].legend()
         l.get_texts()[0].set_text(u"Validierungs-Kosten")
-        # l.get_texts()[1].set_text(u"Epochen")
         axs[1].set_ylabel('RMS-Error')
         min = df['validation_accuracy'].min()
         min_val = df[df['validation_accuracy']==min]
@@ -156,6 +208,10 @@ class MetricReader(object):
         m = self.get_job_metadata(job_id=job_id)
         d = {}
         for col in m.columns: d[col] = m[col].values[0]
+        if 'random_mode' in d:
+          d['training_data'] = '%d : %s' % (d['training_data'], d['random_mode'])
+        if 'eta_min' in d:
+            d['eta'] = '%.03f -> %.03f' % (d['eta'], + d['eta_min'])
         tb = axs[1].table(cellText=[[d['algorithm']], [d['eta']],
                                     [d['lmbda']], [d['dropouts']] ,
                                     [d['mini_batch_size']],
