@@ -35,7 +35,7 @@
         "hidden" : {
             "type" : "INT",
             "size" : 1,
-            "min"  : 25,
+            "min"  : 10,
             "max"  : 500
         }
     }
