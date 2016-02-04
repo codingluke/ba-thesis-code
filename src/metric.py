@@ -132,7 +132,7 @@ class MetricReader(object):
                   y=['Trainingskosten-%s' % titles[index],
                      'Validierungskosten-%s' % titles[index]],
                   ax=ax, subplots=True, layout=(1,2),
-                  figsize=(9,4.5),
+                  figsize=(9,2.4),
                   color=[colors[index], colors[index]])
         plt.subplots_adjust(wspace=0.3, hspace=0.3);
 
