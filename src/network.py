@@ -1,5 +1,5 @@
 """network3.py
-aaaaaaa~~~~~~~
+~~~~~~~
 
 A Theano-based program for training and running simple neural
 networks.
@@ -395,7 +395,6 @@ class AutoencoderLayer():
         del shared_data
         return out.reshape(out.shape[0] * out.shape[1], out.shape[2])
 
-
     def get_hidden_values(self, inpt):
         return sigmoid(T.dot(inpt, self.w) + self.b)
 
@@ -521,7 +520,8 @@ class FullyConnectedLayer():
 
     def accuracy(self, y):
         "Return the accuracy for the mini-batch."
-        return T.sqr(self.output - y).mean()
+        # return T.sqr(self.output - y).mean()
+        return T.sqr(((y - self.output)**2).mean())
 
     def to_string(self):
         return "FC(%d, %d)" % (self.n_in, self.n_out)
