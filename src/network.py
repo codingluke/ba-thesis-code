@@ -520,17 +520,13 @@ class FullyConnectedLayer():
 
     def accuracy(self, y):
         "Return the accuracy for the mini-batch."
-        # return T.sqr(self.output - y).mean()
-        return T.sqr(((y - self.output)**2).mean())
+        return T.mean((y - self.output)**2) ** 0.5
 
     def to_string(self):
         return "FC(%d, %d)" % (self.n_in, self.n_out)
 
     def cost(self, net):
-        # cost = T.sqr(self.output - net.y).mean()
-        # cost = T.sqr(self.output_dropout - net.y).mean()
-        cost = T.nnet.binary_crossentropy(self.output_dropout, net.y).mean()
-        return cost
+        return T.nnet.binary_crossentropy(self.output_dropout, net.y).mean()
 
     def __getstate__(self):
         return (self.n_in, self.n_out, self.activation_fn,

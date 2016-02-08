@@ -46,10 +46,10 @@ net = Network([
 
 print '...start training'
 cost = net.SGD(training_data=training_data, epochs=4,
-        batch_size=mbs, eta=0.04, eta_min=None,
-        validation_data=validation_data, lmbda=0.0,
+        batch_size=mbs, eta=0.5, eta_min=0.01,
+        validation_data=validation_data, lmbda=0.1,
         momentum=0.95, patience_increase=2,
         improvement_threshold=0.995, validation_frequency=20,
         save_dir=save_dir, metric_recorder=mr,
-        algorithm='rmsprop', early_stoping=False)
+        algorithm='sgd', early_stoping=False)
 print "Zeit : %d" % mr.stop()
