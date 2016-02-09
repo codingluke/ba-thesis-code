@@ -2,6 +2,7 @@
 
 import numpy as np
 import load_data as l
+
 import PIL.Image
 import cPickle
 import pdb
@@ -29,7 +30,7 @@ training_data = BatchImgProcessor(
 validation_data = BatchImgProcessor(
     X_dirpath='../../data/onetext_valid_small/*',
     y_dirpath='../../data/train_cleaned/',
-    batchsize=50000, border=border, limit=None,
+    batchsize=500000, border=border, limit=None,
     random=False, modus='full', rnd=rnd,
     dtype=theano.config.floatX)
 
@@ -40,16 +41,17 @@ print "Save Dir: " + save_dir
 start = timer()
 mbs = 500
 net = Network([
-        FullyConnectedLayer(n_in=(2*border+1)**2, n_out=80, rnd=rnd),
-        FullyConnectedLayer(n_in=80, n_out=1, rnd=rnd)
+        FullyConnectedLayer(n_in=(2*border+1)**2, n_out=200, rnd=rnd,
+        p_dropout=0.01),
+        FullyConnectedLayer(n_in=200, n_out=1, rnd=rnd)
     ], mbs)
 
 print '...start training'
 cost = net.SGD(training_data=training_data, epochs=4,
-        batch_size=mbs, eta=0.5, eta_min=0.01,
-        validation_data=validation_data, lmbda=0.1,
-        momentum=0.95, patience_increase=2,
+        batch_size=mbs, eta=0.1, eta_min=0.01,
+        validation_data=validation_data, lmbda=0.0,
+        momentum=0.95, patience_increase=2, 
         improvement_threshold=0.995, validation_frequency=20,
         save_dir=save_dir, metric_recorder=mr,
-        algorithm='sgd', early_stoping=False)
+        algorithm='rmsprop', early_stoping=False)
 print "Zeit : %d" % mr.stop()
