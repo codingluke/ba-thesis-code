@@ -42,6 +42,7 @@ from theano.tensor.nnet import softmax
 from theano.tensor import shared_randomstreams
 from theano.tensor.signal import downsample
 from theano.tensor.shared_randomstreams import RandomStreams
+import abc
 
 # Activation functions for neurons
 def linear(z): return z
@@ -49,6 +50,7 @@ def ReLU(z): return T.maximum(0.0, z)
 from theano.tensor.nnet import sigmoid
 from theano.tensor import tanh
 
+static_rnd = np.random.RandomState()
 
 #### Main class used to construct and train networks
 class Network():
@@ -317,11 +319,26 @@ class Network():
 
 #### Define layer types
 
-class AutoencoderLayer():
+class Layer():
+
+    def set_inpt(self, inpt, inpt_dropout, batch_size):
+        return NotImplemented
+
+    def to_string(self):
+        return NotImplemented
+
+    def __getstate__(self):
+        return NotImplemented
+
+    def __setstate__(self, state):
+        return NotImplemented
+
+
+class AutoencoderLayer(Layer):
 
     def __init__(self, n_in=None, n_hidden=None, w=None, b_hid=None,
                  b_vis=None, activation_fn=sigmoid, p_dropout=0.0,
-                 corruption_level=0.0, rnd=None):
+                 corruption_level=0.0, rnd=static_rnd):
         self.n_in = n_in
         self.n_hidden = n_hidden
         self.activation_fn = activation_fn
@@ -329,6 +346,7 @@ class AutoencoderLayer():
         self.theano_rng = RandomStreams(rnd.randint(2 ** 30))
         self.corruption_level = corruption_level
         self.rnd = rnd
+        print n_in, n_hidden
 
         if not w:
             w = tshared(self.rnd.uniform(
@@ -490,7 +508,7 @@ class AutoencoderLayer():
 class FullyConnectedLayer():
 
     def __init__(self, n_in, n_out, activation_fn=sigmoid, p_dropout=0.0,
-                 rnd=None):
+                 rnd=static_rnd):
         self.n_in = n_in
         self.n_out = n_out
         self.activation_fn = activation_fn
@@ -555,7 +573,7 @@ def size(data):
     "Return the size of the dataset `data`."
     return data.get_value(borrow=True).shape[0]
 
-def dropout_layer(layer, p_dropout, rnd=None):
+def dropout_layer(layer, p_dropout, rnd=static_rnd):
     srng = shared_randomstreams.RandomStreams(
         rnd.randint(999999))
     mask = srng.binomial(n=1, p=1-p_dropout, size=layer.shape)

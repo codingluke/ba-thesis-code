@@ -109,7 +109,7 @@ class MetricReader(object):
 
 
     def compair_plot(self, job_ids = [], colors=['r', 'g', 'b'],
-                     titles=[1, 2, 3]):
+                     titles=[1, 2, 3], figsize=(9,2.4), xytext=None):
         df = pd.DataFrame()
         title = 'Trainingsverlauf Vergleiche'
         ax = None
@@ -132,14 +132,14 @@ class MetricReader(object):
                   y=['Trainingskosten-%s' % titles[index],
                      'Validierungskosten-%s' % titles[index]],
                   ax=ax, subplots=True, layout=(1,2),
-                  figsize=(9,2.4),
+                  figsize=figsize,
                   color=[colors[index], colors[index]])
         plt.subplots_adjust(wspace=0.3, hspace=0.3);
 
         ax[0].set_title('Trainingskosten')
         ax[0].set_ylabel('Cross-Entropy')
         ax[1].set_title('Validierungskosten')
-        ax[1].set_ylabel('Root-Mean-Square')
+        ax[1].set_ylabel('RMS-Error')
         # ax[1].yaxis.set_label_coords(5.1, 0)
         l = ax[0].legend()
         l2 = ax[1].legend()
@@ -157,8 +157,9 @@ class MetricReader(object):
         xmin, xmax = ax[1].get_xlim()
         ymin, ymax = ax[1].get_ylim()
 
+        if not xytext: xytext = (xmax/2, (ymax+ymin)/2)
         ax[1].annotate('Minimum (%f)' % min_y, xy=(min_x, min_y),
-                        xytext=(xmax/2, (ymax+ymin)/2),
+                        xytext=xytext,
                         arrowprops=dict(facecolor='black', shrink=0.05))
         ax[1].plot(min_x, min_y, 'o', color="k")
 
