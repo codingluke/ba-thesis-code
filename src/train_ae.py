@@ -2,73 +2,70 @@
 
 import numpy as np
 import load_data as l
+
 import PIL.Image
 import cPickle
 import pdb
 import theano
-#from utils import tile_raster_images
 from timeit import default_timer as timer
 
-from network import Network, FullyConnectedLayer, \
-                    tanh, ReLU, AutoencoderLayer
+from network import Network, FullyConnectedLayer, tanh, ReLU, AutoencoderLayer
 from preprocessor import BatchImgProcessor
-from engine import Cleaner
+from metric import MetricRecorder
+
+rnd = np.random.RandomState()
+
 
 border = 2
 
-BA1 = BatchImgProcessor.load(
-    X_dirpath='../../data/train_cleaned/*',
+training_data = BatchImgProcessor(
+    X_dirpath='../../data/onetext_train_small/*',
     y_dirpath='../../data/train_cleaned/',
-    batchsize=5000000,
-    border=border,
-    limit=None,
-    train_stepover=8,
-    dtype=theano.config.floatX)
-pretrain_data = BA1(modus='full', random=True)
+    batchsize=2000000, border=border, limit=None,
+    random=True, random_mode='fully', modus='full',
+    dtype=theano.config.floatX, rnd=rnd)
 
-BatchProcessor = BatchImgProcessor.load(
-    X_dirpath='../../data/train/*',
+validation_data = BatchImgProcessor(
+    X_dirpath='../../data/onetext_valid_small/*',
     y_dirpath='../../data/train_cleaned/',
-    batchsize=5000000,
-    border=border,
-    limit=None,
-    train_stepover=8,
+    batchsize=2000000, border=border, limit=None,
+    random=False, modus='full', rnd=rnd,
     dtype=theano.config.floatX)
-training_data = BatchProcessor(modus='train', random=True)
-validation_data = BatchProcessor(modus='valid')
-print "Training size: %d" % len(training_data)
-print "Validation size: %d" % len(validation_data)
 
-n_in = (2*border+1)**2
+pretrain_data = BatchImgProcessor(
+    X_dirpath='../../data/onetext_pretrain_small/*',
+    y_dirpath='../../data/train_cleaned/',
+    batchsize=50000, border=border, limit=None,
+    random=True, modus='full', random_mode='fully', rnd=rnd,
+    dtype=theano.config.floatX)
 
-start = timer()
-mini_batch_size = 200
+#for cl in [0.1, 0.2, 0.3, 0.4, 0.5]:
+for cl in [0.2]:
+    mr = MetricRecorder(config_dir_path='./simple.json')
+    mr.start()
+    print "Job ID: %d" % mr.job_id
+    save_dir = "./model/%s_%d_" % (mr.experiment_name, mr.job_id)
+    print "Save Dir: " + save_dir
+    print len(pretrain_data)
 
-net = Network([
-        AutoencoderLayer(n_in=n_in, n_hidden=n_in-5),
-        AutoencoderLayer(n_in=n_in-5, n_hidden=n_in-10),
-        FullyConnectedLayer(n_in=n_in-10, n_out=60),
-        FullyConnectedLayer(n_in=60, n_out=1),
-    ], mini_batch_size)
+    start = timer()
+    mbs = 500
+    net = Network([
+            AutoencoderLayer(n_in=(2*border+1)**2, n_hidden=190, 
+            rnd=rnd, corruption_level=cl),
+            FullyConnectedLayer(n_in=190, n_out=1, rnd=rnd)
+        ], mbs)
 
-print '...start pretraining'
-net.pretrain_autoencoders(training_data=pretrain_data,
-                    batch_size=mini_batch_size,
-                    eta=0.01, epochs=15)
+    print '...start pretraining'
+    #net.pretrain_autoencoders(training_data=pretrain_data,
+    #                    batch_size=mbs, eta=0.01, epochs=15)
 
-#image = PIL.Image.fromarray(tile_raster_images(
-#        X=net.layers[0].w.get_value(borrow=True).T,
-#        img_shape=(5, 5), tile_shape=(10, 10),
-#        tile_spacing=(2, 2)))
-#image.show()
-
-training_data.reset()
-print '...start training'
-net.SGD(training_data=training_data, epochs=10,
-        batch_size=mini_batch_size, eta=0.025,
-        validation_data=validation_data, lmbda=0.0,
-        momentum=None, patience_increase=2,
-        improvement_threshold=0.995, validation_frequency=2,
-        save_dir='./model/sae_full_')
-end = timer()
-print "Zeit : %d" % (end-start)
+    print '...start training'
+    cost = net.SGD(training_data=training_data, epochs=15,
+            batch_size=mbs, eta=0.045, eta_min=0.01,
+            validation_data=validation_data, lmbda=0.0,
+            momentum=0.95, patience_increase=2, 
+            improvement_threshold=0.995, validation_frequency=1,
+            save_dir=save_dir, metric_recorder=mr,
+            algorithm='rmsprop', early_stoping=False)
+    print "Zeit : %d" % mr.stop()

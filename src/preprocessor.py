@@ -103,6 +103,7 @@ class BatchImgProcessor(object):
         for i in xrange(self.batchsize):
             rnd = self.rnd.randint(0, high)
             patch = self.preprocessors[rnd].get_random_patch()
+            #patch[0][(len(patch[0]) - 1) / 2] = 1.0 #clear center pixel
             X.append(patch[0])
             Y.append(patch[1])
         l = (2*self.border+1)**2

@@ -23,9 +23,9 @@ mr.start()
 border = 2
 
 pretrain_data = BatchImgProcessor(
-    X_dirpath='../../data/pretrain/*',
-    y_dirpath='../../data/pretrain/',
-    batchsize=4000000,
+    X_dirpath='../../data/onetext_pretrain_small/*',
+    y_dirpath='../../data/onetext_pretrain_small/',
+    batchsize=500000,
     border=border,
     limit=None,
     dtype=theano.config.floatX,
@@ -33,9 +33,9 @@ pretrain_data = BatchImgProcessor(
     random=True, modus='full', rnd=rnd)
 
 training_data = BatchImgProcessor(
-    X_dirpath='../../data/train/*',
+    X_dirpath='../../data/onetext_train_small/*',
     y_dirpath='../../data/train_cleaned/',
-    batchsize=4000000,
+    batchsize=1000000,
     border=border,
     limit=None,
     dtype=theano.config.floatX,
@@ -43,9 +43,9 @@ training_data = BatchImgProcessor(
     modus='full', random=True, rnd=rnd)
 
 validation_data = BatchImgProcessor(
-    X_dirpath='../../data/valid/*',
+    X_dirpath='../../data/onetext_valid_small/*',
     y_dirpath='../../data/train_cleaned/',
-    batchsize=500000,
+    batchsize=1000000,
     border=border,
     limit=None,
     dtype=theano.config.floatX,
@@ -60,14 +60,14 @@ print "Validation size: %d" % len(validation_data)
 
 n_in = (2*border+1)**2
 
-mini_batch_size = 200
+mini_batch_size = 500
 
 net = Network([
-        AutoencoderLayer(n_in=n_in, n_hidden=80, corruption_level=0.3,
-            activation_fn=ReLU, rnd=rnd),
-        AutoencoderLayer(n_in=80, n_hidden=50, corruption_level=0.3,
-            activation_fn=ReLU, rnd=rnd),
-        FullyConnectedLayer(n_in=50, n_out=1, rnd=rnd),
+        AutoencoderLayer(n_in=n_in, n_hidden=190, corruption_level=0.14,
+          rnd=rnd),
+        AutoencoderLayer(n_in=190, n_hidden=81, corruption_level=0.14,
+          rnd=rnd),
+        FullyConnectedLayer(n_in=81, n_out=1, rnd=rnd),
     ], mini_batch_size)
 
 # image = PIL.Image.fromarray(tile_raster_images(
@@ -80,19 +80,19 @@ save_dir = "./model/%s_%d_" % (mr.experiment_name, mr.job_id)
 print "Savedir : " + save_dir
 
 print '...start pretraining'
-net.pretrain_autoencoders(
-    training_data=pretrain_data,
-    batch_size=mini_batch_size,
-    eta=0.01, epochs=4,
-    metric_recorder=mr, save_dir=save_dir)
+#net.pretrain_autoencoders(
+#    training_data=pretrain_data,
+#    batch_size=mini_batch_size,
+#    eta=0.03, epochs=15,
+#    metric_recorder=mr, save_dir=save_dir)
 
 training_data.reset()
 print '...start training'
-net.SGD(training_data=training_data, epochs=5,
-        batch_size=mini_batch_size, eta=0.01,
+net.SGD(training_data=training_data, epochs=15,
+        batch_size=mini_batch_size, eta=0.045, eta_min=0.01,
         validation_data=validation_data, lmbda=0.0,
         momentum=0.0, patience=20000, patience_increase=2,
-        improvement_threshold=0.995, validation_frequency=30,
+        improvement_threshold=0.995, validation_frequency=1,
         save_dir=save_dir, metric_recorder=mr, algorithm='rmsprop')
 
 print "Zeit : %d" % mr.stop()
