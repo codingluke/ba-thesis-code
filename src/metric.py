@@ -19,18 +19,30 @@ class MetricReader(object):
         self.connection, self.db, self.metrics, self.meta, \
             self.trainings = self.__connect()
 
-    def get_records(self, job_id=None, typ='train'):
+    def get_records(self, job_id=None, typ='train', experiment_name=None):
+        collection = self.metrics
+        if experiment_name:
+            collection = self.db.db[experiment_name]['metrics']
         type = re.compile(r'^%s' % typ, re.I)
-        cursor = self.metrics.find({'job_id' : job_id,
+        cursor = collection.find({'job_id' : job_id,
                                     'type' : { '$regex' : type}})
         return pd.DataFrame(list(cursor))
-
 
     def get_best_records(self):
         None
 
     def get_best_job_id(self):
         None
+
+    def get_experiment_names(self):
+        return self.db.collection_names()
+
+    def get_job_metadata(self, job_id=None, experiment_name=None):
+        collection = self.trainings
+        if experiment_name:
+            collection = self.db.db[experiment_name]['trainings']
+        cursor = collection.find({'job_id' : job_id})
+        return pd.DataFrame(list(cursor))
 
     def plot_pretrain(self, job_id=None):
         df = self.get_records(job_id=job_id, typ='pretrain')
@@ -44,18 +56,6 @@ class MetricReader(object):
         ax.set_title('Autoencoder Vortraining')
         ax.set_ylabel('Cross-Entropy')
         ax.set_xlabel('Epochen')
-        # ymin, ymax = ax.get_ylim()
-        # epochs = [df[df['epoch']==e]['iteration'].values[-1]
-                  # for e in xrange(df['epoch'].max())]
-        # ax.vlines(x=epochs, ymin=[ymin], ymax=[ymax], label='epochs', linestyle='dotted')
-        # min = df['validation_accuracy'].min()
-        # min_val = df[df['validation_accuracy']==min]
-        # min_x = min_val['iteration'].values[0]
-        # min_y = min_val['validation_accuracy'].values[0]
-        # xmin, xmax = ax.get_xlim()
-        # ax.annotate('min at (%f)' % min_y, xy=(min_x, min_y), xytext=(xmax/2, ymax/2),
-                    # arrowprops=dict(facecolor='black', shrink=0.05))
-        # ax.plot(min_x, min_y, 'o', color="k")
         l = ax.legend()
         meta = self.get_job_metadata(job_id=job_id)
         layers = meta['layers'].values[0].split('-')
@@ -63,59 +63,19 @@ class MetricReader(object):
             l.get_texts()[i].set_text(u"Layer %d : %s" % (i,layers[i]) )
         plt.show()
 
-    def get_job_metadata(self, job_id=None):
-        cursor = self.trainings.find({'job_id' : job_id})
-        return pd.DataFrame(list(cursor))
+    def compair_plot(self, job_ids=[], colors=['r', 'g', 'b'],
+                     titles=[1, 2, 3], figsize=(9,2.4), xytext=None,
+                     experiment_names=[]):
+        if experiment_names and len(experiment_names) != len(job_ids):
+            raise Exception("all job_ids must have an experiment_name")
 
-    def plot_epoches(self, job_id=None, first=False, title=None):
-        index = 0 if first else -1
-        if not title: title = "Lernphase Job %d" % job_id
-
-        df = self.get_records(job_id=job_id)
-        fig, ax = plt.subplots(1, 1)
-        epochs = [df[df['epoch']==e]['iteration'].values[index]
-                  for e in xrange(df['epoch'].max())]
-        df = df[df['iteration'].isin(epochs)].reset_index()
-        df[['cost', 'validation_accuracy']].plot(
-                y=['cost', 'validation_accuracy'],
-                title=title,
-                ax=ax,
-                subplots=True)
-        seconds_epoche = int(df[df['iteration']==epochs[0]]['second'].values[0])
-
-        ymin, ymax = ax.get_ylim()
-        min = df['validation_accuracy'].min()
-        min_val = df[df['validation_accuracy']==min]
-        min_x = min_val.index.values[0]
-        min_y = min_val['validation_accuracy'].values[0]
-        xmin, xmax = ax.get_xlim()
-        ax.annotate('Minimum (%f)' % min_y, xy=(min_x, min_y), xytext=(xmax/2, ymax/2),
-                    arrowprops=dict(facecolor='black', shrink=0.05))
-        ax.plot(min_x, min_y, 'o', color="k")
-        ax.set_xlabel('Epochen')
-        # l = ax.legend()
-        # l.get_texts()[0].set_text(u"Trainings Kosten (cross-entropy)")
-        # l.get_texts()[1].set_text(u"Validation Präzision (rmse)")
-        zeit = '%ds / Epoche' % seconds_epoche
-        tb = ax.table(cellText=[['RMSProp'], [0.01], [0.0], ['-'] ,[2], [1000],
-                           [500000], [3000000], [500000], [zeit]],
-                 rowLabels=['Algorithmus', 'Lernrate', 'L2', 'Dropout',
-                            'Rahmen', 'Minibatch', 'Batch', 'Training',
-                            'Validation', 'Zeit'],
-                 colWidths=[0.2, 0.4], cellLoc='left',
-                 loc=None, bbox=[1.25, 0.0, 0.3, 1.0])
-        tb.scale(1.5, 1.5)
-        plt.show()
-
-
-    def compair_plot(self, job_ids = [], colors=['r', 'g', 'b'],
-                     titles=[1, 2, 3], figsize=(9,2.4), xytext=None):
         df = pd.DataFrame()
         title = 'Trainingsverlauf Vergleiche'
         ax = None
         cols = []
         for index, job in enumerate(job_ids):
-          tmp = self.get_records(job_id=job)
+          tmp = self.get_records(job_id=job,
+                  experiment_name=experiment_names[index])
           tmp = tmp[['cost', 'validation_accuracy', 'epoch', 'iteration']]
           tmp.columns = ['Trainingskosten-%s' % titles[index],
                         'Validierungskosten-%s' % titles[index],
@@ -140,7 +100,6 @@ class MetricReader(object):
         ax[0].set_ylabel('Cross-Entropy')
         ax[1].set_title('Validierungskosten')
         ax[1].set_ylabel('RMS-Error')
-        # ax[1].yaxis.set_label_coords(5.1, 0)
         l = ax[0].legend()
         l2 = ax[1].legend()
         for i in xrange(len(job_ids)):
@@ -163,11 +122,11 @@ class MetricReader(object):
                         arrowprops=dict(facecolor='black', shrink=0.05))
         ax[1].plot(min_x, min_y, 'o', color="k")
 
-
-    def plot(self, job_id=None):
-        df = self.get_records(job_id=job_id)
+    def plot(self, job_id=None, experiment_name=None):
+        df = self.get_records(job_id=job_id, experiment_name=experiment_name)
         fig, ax = plt.subplots(1, 1)
-        m = self.get_job_metadata(job_id=job_id)
+        m = self.get_job_metadata(job_id=job_id,
+                                  experiment_name=experiment_name)
         title = m['layers'].values[0]
         axs = df[['cost', 'validation_accuracy', 'iteration']].plot(
                 x='iteration',
