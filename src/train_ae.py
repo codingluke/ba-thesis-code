@@ -57,13 +57,13 @@ for cl in [0.2]:
         ], mbs)
 
     print '...start pretraining'
-    #net.pretrain_autoencoders(training_data=pretrain_data,
-    #                    batch_size=mbs, eta=0.01, epochs=15)
+    #net.pretrain_autoencoders(tdata=pretrain_data,
+    #                    mbs=mbs, eta=0.01, epochs=15)
 
     print '...start training'
-    cost = net.train(training_data=training_data, epochs=15,
-            batch_size=mbs, eta=0.045, eta_min=0.01,
-            validation_data=validation_data, lmbda=0.0,
+    cost = net.train(tdata=training_data, epochs=15,
+            mbs=mbs, eta=0.045, eta_min=0.01,
+            vdata=validation_data, lmbda=0.0,
             momentum=0.95, patience_increase=2,
             improvement_threshold=0.995, validation_frequency=1,
             save_dir=save_dir, metric_recorder=mr,

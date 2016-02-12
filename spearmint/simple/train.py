@@ -42,7 +42,7 @@ def train(job_id, params):
         'eta_min': params['eta_min'][0],
         'border' : 2,
         'hidden' : int(params['hidden'][0]),
-        'batch_size': 500
+        'mini_batch_size': 500
     }
 
     training_data = BatchImgProcessor(
@@ -78,14 +78,13 @@ def train(job_id, params):
     net = Network([
         FullyConnectedLayer(n_in=n_in, n_out=C['hidden'], rnd=rnd),
         FullyConnectedLayer(n_in=C['hidden'], n_out=1, rnd=rnd)],
-        C['batch_size'])
+        C['mini_batch_size'])
 
-    result = net.train(training_data=training_data, epochs=C['epochs'],
-                     batch_size=C['batch_size'], eta=C['eta'],
+    result = net.train(tdata=training_data, epochs=C['epochs'],
+                     mbs=C['mini_batch_size'], eta=C['eta'],
                      eta_min=C['eta_min'],
-                     validation_data=validation_data, lmbda=C['lmbda'],
-                     momentum=None, patience=C['patience'],
-                     patience_increase=C['patience_increase'],
+                     vdata=validation_data, lmbda=C['lmbda'],
+                     momentum=None, patience_increase=C['patience_increase'],
                      improvement_threshold=C['improvement_threshold'],
                      validation_frequency=C['validation_frequency'],
                      metric_recorder=metric_recorder,

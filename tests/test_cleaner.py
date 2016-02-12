@@ -10,30 +10,32 @@ import sys
 lib_path = os.path.abspath(os.path.join('src'))
 sys.path.append(lib_path)
 
-from engine import Cleaner, BatchCleaner
+from cleaner import Cleaner, BatchCleaner
 import config
 
-class TestBatchCleaner(unittest.TestCase):
+class TestCleaner(unittest.TestCase):
 
     @unittest.skipUnless(config.slow, 'slow test')
     def test_clean_and_save(self):
-        #bCleaner = BatchCleaner(dirty_dir='../data/test/',
-        #    model_path='./tests/data/models/ae3_213750_model.pkl')
-        #bCleaner.clean_and_save(output_dir='../data/test_cleaned')
+        bCleaner = BatchCleaner(dirty_dir=config.data_dir_path + 'test/',
+           model_path='./tests/data/models/ae3_213750_model.pkl')
+        outpath = config.data_dir_path + 'test_cleaned'
+        bCleaner.clean_and_save(output_dir=outpath)
         pass
 
     @unittest.skipUnless(config.slow, 'slow test')
     def test_clean_for_submission(self):
-        #bCleaner = BatchCleaner(dirty_dir='../data/test/',
-        #    model_path='./tests/data/models/ae3_213750_model.pkl')
-        #bCleaner.clean_for_submission(output_dir='../data/test_cleaned')
+        bCleaner = BatchCleaner(dirty_dir=config.data_dir_path + 'test/',
+           model_path='./tests/data/models/ae3_213750_model.pkl')
+        outpath = config.data_dir_path + 'test_cleaned'
+        bCleaner.clean_for_submission(output_dir=outpath)
         pass
 
 class TestCleaner(unittest.TestCase):
 
-    # @unittest.skipUnless(config.slow, 'slow test')
+    @unittest.skipUnless(config.slow, 'slow test')
     def test_clean(self):
-        img = '../data/test/10.png'
+        img = confi.data_dir_path + 'test/10.png'
         PIL.Image.open(img).show()
 
         e = Cleaner('./tests/data/models/13_72000_model.pkl')

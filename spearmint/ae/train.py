@@ -43,7 +43,7 @@ def train(job_id, params):
         'corruption_level' : float(params['corruption_level'][0]),
         'border' : 2,
         'hidden' : int(params['hidden'][0]),
-        'batch_size': 500
+        'mini_batch_size': 500
     }
 
     training_data = BatchImgProcessor(
@@ -87,17 +87,17 @@ def train(job_id, params):
         AutoencoderLayer(n_in=n_in, n_hidden=C['hidden'], rnd=rnd,
           corruption_level=C['corruption_level']),
         FullyConnectedLayer(n_in=C['hidden'], n_out=1, rnd=rnd)],
-        C['batch_size'])
+        C['mini_batch_size'])
 
     print '...start pretraining'
     net.pretrain_autoencoders(training_data=pretrain_data,
-        batch_size=C['batch_size'], eta=C['eta_pre'], epochs=15, metric_recorder=metric_recorder)
+        mbs=C['mini_batch_size'], eta=C['eta_pre'], epochs=15, metric_recorder=metric_recorder)
 
-    result = net.train(training_data=training_data, epochs=C['epochs'],
-                     batch_size=C['batch_size'], eta=C['eta'],
+    result = net.train(tdata=training_data, epochs=C['epochs'],
+                     mbs=C['mini_batch_size'], eta=C['eta'],
                      eta_min=C['eta_min'],
-                     validation_data=validation_data, lmbda=C['lmbda'],
-                     momentum=None, patience=C['patience'],
+                     vdata=validation_data, lmbda=C['lmbda'],
+                     momentum=None,
                      patience_increase=C['patience_increase'],
                      improvement_threshold=C['improvement_threshold'],
                      validation_frequency=C['validation_frequency'],

@@ -11,14 +11,22 @@ The training and validation data has to be in form of a
 python Iterater, which gives back the X and y as indipendent
 numpy arrays.
 
+    for X, y in iterator:
+        X.shape -> (int, int)
+        X.shape -> (int, int)
+
 The training can be stored by a metric_recorder Class. It
-has to have the method 'record' following signature.
+has to have the methods 'record' following signature.
 
     record(self, job_id=None, cost=None, validation_accuracy=None,
            epoch=None, iteration=None, second=None, type='train',
            eta=None)
 
-This program depends on Michael Nielsen's
+and record_training_info with following signature
+
+    record_training_info(self, infos:dict )
+
+This program depends on Michael Nielsen's network3.py
 github.com/mnielsen/neural-networks-and-deep-learning/blob/master/src/network3.py and extends it with many features like stacked denoising autoencoder.
 It incorporates ideas from the Theano documentation on
 multilayer neural nets and stacked denoising autoencoder (notably,
@@ -55,41 +63,40 @@ static_rnd = np.random.RandomState()
 #### Main class used to construct and train networks
 class Network():
 
-    def __init__(self, layers, batch_size):
+    def __init__(self, layers, mbs):
         """Takes a list of `layers`, describing the network architecture, and
-        a value for the `mini_batch_size` to be used during training
-        by stochastic gradient descent.
-
+        a value for the `mbs`, mini batch size, to be used during training
+        by the gradient descend algorithm.
         """
         self.layers = layers
-        self.batch_size = batch_size
+        self.mbs = mbs
         self.params = [param
                        for layer in self.layers
                        for param in layer.params]
         self.x = T.matrix("x", dtype=theano.config.floatX)
         self.y = T.matrix("y", dtype=theano.config.floatX)
         init_layer = self.layers[0]
-        init_layer.set_inpt(self.x, self.x, self.batch_size)
+        init_layer.set_inpt(self.x, self.x, self.mbs)
         for j in xrange(1, len(self.layers)):
             prev_layer, layer  = self.layers[j-1], self.layers[j]
             layer.set_inpt(prev_layer.output, prev_layer.output_dropout,
-                           self.batch_size)
+                           self.mbs)
         self.output = self.layers[-1].output
         self.output_dropout = self.layers[-1].output_dropout
         self.meta = {}
 
     def __getstate__(self):
-        return (self.layers, self.batch_size,
+        return (self.layers, self.mbs,
                 self.x, self.y, self.params, self.meta)
 
     def __setstate__(self, state):
-        layers = batch_size = x = y = params = meta = None
+        layers = mbs = x = y = params = meta = None
         if len(state) == 5:
-          layers, batch_size, x, y, params = state
+          layers, mbs, x, y, params = state
         else:
-          layers, batch_size, x, y, params, meta = state
+          layers, mbs, x, y, params, meta = state
         self.layers = layers
-        self.batch_size = batch_size
+        self.mbs = mbs
         self.x = x
         self.y = y
         self.params = params
@@ -98,16 +105,16 @@ class Network():
         if meta: self.meta = meta
 
     def predict(self, data):
-        ext_size = self.batch_size - (data.shape[0] % self.batch_size)
+        ext_size = self.mbs - (data.shape[0] % self.mbs)
         ext = np.zeros((ext_size, data.shape[1]))
         shape = (data.shape[0]+ext_size, data.shape[1])
         shared_data = tshared(np.append(data, ext).reshape(shape))
         i = T.lscalar() # mini-batch index
         predict = theano.function([i],
             outputs=self.layers[-1].output,
-            givens={ self.x: shared_data[i*self.batch_size: \
-                                         (i+1)* self.batch_size] })
-        num_batches = shape[0] / self.batch_size
+            givens={ self.x: shared_data[i*self.mbs: \
+                                         (i+1)* self.mbs] })
+        num_batches = shape[0] / self.mbs
         out = np.asarray([predict(j) for j in xrange(num_batches)])
         del shared_data
         return out.reshape(shape[0],out.shape[2])[:-ext_size]
@@ -116,14 +123,14 @@ class Network():
         f = open(filename, 'wb')
         cPickle.dump(self, f)
 
-    def pretrain_autoencoders(self, training_data=None, batch_size=200,
+    def pretrain_autoencoders(self, tdata=None, mbs=200,
                               eta=0.25, epochs=1, metric_recorder=None,
                               save_dir=None):
         aes = [layer
                for layer in self.layers
                if isinstance(layer, AutoencoderLayer)]
         for index, ae in enumerate(aes):
-            ae.train(training_data=training_data, batch_size=batch_size,
+            ae.train(tdata=tdata, mbs=mbs,
                      eta=eta, epochs=epochs, ff_layers=aes[:index],
                      metric_recorder=metric_recorder, level=index)
         if save_dir: self.save(save_dir + "pretrained_model.pkl")
@@ -162,31 +169,60 @@ class Network():
     def get_layer_dropout_string(self):
         return ", ".join([str(layer.p_dropout) for layer in self.layers])
 
-    def train(self, training_data=None, epochs=10, batch_size=100,
-            eta=0.025, validation_data=None, lmbda=0.0, momentum=0.0,
-            patience=40000, patience_increase=2, improvement_threshold=0.995,
-            validation_frequency=1, metric_recorder=None, save_dir=None,
-            algorithm='rmsprop', early_stoping=True, eta_min=None):
-        """Train the network using mini-batch stochastic gradient descent."""
+    def train(self, tdata=None, vdata=None, epochs=10, mbs=100, eta=0.025,
+              eta_min=None, lmbda=0.0, momentum=0.0, algorithm='rmsprop',
+              patience_increase=2, improvement_threshold=0.995,
+              validation_frequency=1, metric_recorder=None, save_dir=None,
+              early_stoping=True):
+        """Train the network using mini-batch and a given algorithm.
 
-        if not validation_data or len(validation_data) < 1:
+        Keyword arguments:
+
+        tdata     -- train data iterator (BatchImgProcessor)
+        vdata     -- validation data iterator (BatchImgProcessor)
+        epochs    -- number of epochs to train
+        mbs       -- Mini-Batch-Size for training
+        eta       -- learning rate max
+        eta_min   -- learning rate min, when set it calculates a linspace,
+                     from eta to eta_min per epoche.
+        lambda    -- l2 reguarisation coeffiziet
+        momentum  -- Momentunm for stochastic gradient descent. Ignored
+                     when train with rmsprop.
+        algorithm -- ('rmsprop' | 'sgd') which algorithm for the update
+                     rules to use. ('rmsprop')
+        save_dir  -- Dir where to save the model, when better is found.
+        improvement_threshold -- How much the better model must be that
+                                 the patience gets increased.
+        patience_increase  -- How much increase the patience when a better
+                              model is found.
+                              Ignored when not using early stopping
+        validation_frequency -- How oftern per epoch should be validated
+        metric_recorder -- Instance of a MetricRecorder to record the training
+        early_stoping -- When set it stops befor reaching the last epoch, when
+                         the model is not getting better.
+        """
+
+        imp_thresh = improvement_threshold
+        pat_incr = patience_increase
+
+        if not vdata or len(vdata) < 1:
             raise Exception("no validation data")
 
-        # Save metainfo for later
+        # Save metainfo
         self.meta = {
-          'mini_batch_size' : batch_size,
-          'random_mode' : training_data.random_mode,
+          'mini_batch_size' : mbs,
+          'random_mode' : tdata.random_mode,
           'eta' : eta,
           'eta_min' : eta_min,
           'lmbda' : lmbda,
           'momentum' : momentum,
-          'patience_increase' : patience_increase,
-          'improvement_threshold' : 0.995,
+          'patience_increase' : pat_incr,
+          'improvement_threshold' : imp_thresh,
           'validation_frequency' : validation_frequency,
           'dropouts' : self.get_layer_dropout_string(),
           'layers' : self.get_layer_string(),
-          'training_data' : training_data.full_lenght(),
-          'validation_data' : validation_data.full_lenght(),
+          'training_data' : tdata.full_lenght(),
+          'validation_data' : vdata.full_lenght(),
           'algorithm' : algorithm
         }
 
@@ -195,25 +231,25 @@ class Network():
 
         # Prepare Theano shared variables with the shape and type of
         # The train, valid batches.
-        train_x_zeros, train_y_zeros = training_data.next()
+        train_x_zeros, train_y_zeros = tdata.next()
         training_x = tshared(train_x_zeros)
         training_y = tshared(train_y_zeros)
-        training_data.reset()
-        valid_x_zeros, valid_y_zeros = validation_data.next()
+        tdata.reset()
+        valid_x_zeros, valid_y_zeros = vdata.next()
         validation_x = tshared(valid_x_zeros)
         validation_y = tshared(valid_y_zeros)
-        validation_data.reset()
+        vdata.reset()
 
         # compute number of minibatches for training, validation and testing
-        num_training_batches = size(training_x) / batch_size
-        tota_num_training_batches = num_training_batches * len(training_data)
-        num_validation_batches = size(validation_x) / batch_size
+        n_train_batches = size(training_x) / mbs
+        tota_n_train_batches = n_train_batches * len(tdata)
+        n_valid_batches = size(validation_x) / mbs
 
         # define the (regularized) cost function,
         # symbolic gradients, and updates
         l2_norm_squared = sum([(layer.w**2).sum() for layer in self.layers])
         cost = self.layers[-1].cost(self)+\
-               0.5*lmbda*l2_norm_squared/num_training_batches
+               0.5*lmbda*l2_norm_squared/n_train_batches
         grads = T.grad(cost=cost, wrt=self.params)
 
         # define update rules
@@ -224,90 +260,93 @@ class Network():
         elif algorithm == 'sgd':
             updates = self.naive_sgd(grads, lr, momentum=momentum)
 
-        # define functions to train a mini-batch, and to compute the
-        # accuracy in validation and test mini-batches.
+        # define theano functions to train a mini-batch, and to compute the
+        # accuracy for validation mini-batches.
         i = T.lscalar() # mini-batch index
         train_mb = theano.function(
             [i, lr], cost, updates=updates,
             givens={
-                self.x:
-                training_x[i*self.batch_size: (i+1)*self.batch_size],
-                self.y:
-                training_y[i*self.batch_size: (i+1)*self.batch_size]
+                self.x: training_x[i*self.mbs: (i+1)*self.mbs],
+                self.y: training_y[i*self.mbs: (i+1)*self.mbs]
             }, allow_input_downcast=True)
-
         validate_mb_accuracy = theano.function(
             [i], self.layers[-1].accuracy(self.y),
             givens={
-                self.x:
-                validation_x[i*self.batch_size: (i+1)*self.batch_size],
-                self.y:
-                validation_y[i*self.batch_size: (i+1)*self.batch_size]
+                self.x: validation_x[i*self.mbs: (i+1)*self.mbs],
+                self.y: validation_y[i*self.mbs: (i+1)*self.mbs]
             })
 
-        # Do the actual training
-        best_validation_accuracy = 1.0
-        done_looping = False
-
-        val_per_epochs = training_data.actual_full_length() / batch_size
+        # set start meta variables
+        best_valid_acc = 1.0
+        done_looping = False # for early stopping
+        val_per_epochs = tdata.actual_full_length() / mbs
         validation_frequency = int(val_per_epochs/ validation_frequency)
         patience = validation_frequency * 4
 
+        # calc linear eta decrease
         if not eta_min: eta_min = eta
         etas = np.linspace(eta, eta_min, epochs)
-        cost = 0
-        iteration = 0
-        for epoch in xrange(epochs):
-            if done_looping: break
-            train_it = 0
+        cost = iteration = 0
+
+        # Do the actual training
+        for epoch in xrange(epochs): # for all epoches
+            if done_looping: break # in calse of early stopping
             eta = etas[epoch] # Update eta
-            for train_x, train_y in training_data:
-                train_it += 1
-                if done_looping: break
+            for train_x, train_y in tdata: # go through all batches
+                if done_looping: break # in case of early stopping
+                # update theano shared variables
                 training_x.set_value(train_x, borrow=True)
                 training_y.set_value(train_y, borrow=True)
-                for minibatch_index in xrange(num_training_batches):
+                for minibatch_index in xrange(n_train_batches):
+                    # go through batch in mini batches
                     iteration += 1
+                    # actual training
                     cost += train_mb(minibatch_index, eta)
+
+                    # Validation
                     if iteration % validation_frequency == 0:
-                        valid_acc = []
-                        for valid_x, valid_y in validation_data:
+                        valid_accs = []
+                        # Go through the validation data, and get the acc
+                        for valid_x, valid_y in vdata:
+                            # update theano shared variables
                             validation_x.set_value(valid_x, borrow=True)
                             validation_y.set_value(valid_y, borrow=True)
-                            valid_acc.append(
-                                    [validate_mb_accuracy(j)
-                                     for j in xrange(num_validation_batches)])
-                        validation_accuracy = np.mean(valid_acc)
-                        train_cost = cost / iteration
+                            valid_accs.append([validate_mb_accuracy(j)
+                                for j in xrange(n_valid_batches)])
+                        valid_acc = np.mean(valid_accs) # mean over valid_acc
+
+                        # record when metric_recorder is available
                         if metric_recorder:
                             metric_recorder.record(cost=train_cost,
-                                validation_accuracy=validation_accuracy,
+                                validation_accuracy=valid_acc,
                                 epoch=epoch, iteration=iteration)
 
                         print("Epoch {0}: validation accuracy {1}".format(
-                            epoch, validation_accuracy))
-                        if validation_accuracy <= best_validation_accuracy:
+                            epoch, valid_acc))
+
+                        # When best model is found
+                        if valid_acc <= best_valid_acc:
                             print "Best validation accuracy to date."
+                            # save model when save_dir is set
                             if save_dir:
-                                # save model
                                 self.meta['iteration'] = iteration
-                                self.meta['accuracy'] = validation_accuracy
+                                self.meta['accuracy'] = valid_acc
                                 self.meta['cost'] = cost
-                                self.save(save_dir + \
-                                          "%d_model.pkl" % iteration)
+                                name = "%d_model.pkl" % iteration
+                                self.save(save_dir + name)
+
                             # increase patience
-                            if (validation_accuracy < best_validation_accuracy*
-                                improvement_threshold):
-                                patience = max(patience,
-                                               int(iteration * patience_increase))
+                            if (valid_acc < best_valid_acc * imp_thresh):
+                                patience = max(patience, int(iteration *
+                                                             pat_incr))
                                 print "iter {0}, patience {1}".format(
                                     iteration, patience)
-                            best_validation_accuracy = validation_accuracy
+                            best_valid_acc = valid_acc
 
+                    # early stopping when patience is over
                     if patience <= iteration and early_stoping:
                         print "iter %i" % iteration
                         print "patience %i" % patience
-                        print 'break'
                         done_looping = True
                         break
 
@@ -315,13 +354,13 @@ class Network():
             print "patience %i" % patience
 
         print("Finished training network.")
-        return best_validation_accuracy
+        return best_valid_acc
 
 #### Define layer types
 
 class Layer():
 
-    def set_inpt(self, inpt, inpt_dropout, batch_size):
+    def set_inpt(self, inpt, inpt_dropout, mbs):
         return NotImplemented
 
     def to_string(self):
@@ -373,13 +412,13 @@ class AutoencoderLayer(Layer):
         self._params = [self.w, self.b, self.b_prime]
         self.params = [self.w, self.b]
 
-    def set_inpt(self, inpt, inpt_dropout, batch_size):
-        self.inpt = inpt.reshape((batch_size, self.n_in))
+    def set_inpt(self, inpt, inpt_dropout, mbs):
+        self.inpt = inpt.reshape((mbs, self.n_in))
         self.output = self.activation_fn(
             (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
         self.hidden_output = self.get_hidden_values(self.inpt)
         self.inpt_dropout = dropout_layer(
-            inpt_dropout.reshape((batch_size, self.n_in)), self.p_dropout,
+            inpt_dropout.reshape((mbs, self.n_in)), self.p_dropout,
             rnd=self.rnd)
         self.output_dropout = self.activation_fn(
             T.dot(self.inpt_dropout, self.w) + self.b)
@@ -399,16 +438,16 @@ class AutoencoderLayer(Layer):
                                   p=1 - self.corruption_level,
                                   dtype=theano.config.floatX) * self.inpt
 
-    def forward(self, data, batch_size=500):
+    def forward(self, data, mbs=500):
         shared_data = tshared(data)
         i = T.lscalar() # mini-batch index
         fwd = theano.function(
             [i], self.hidden_output,
             givens={
-                self.inpt: shared_data[i*batch_size: \
-                                       (i+1)* batch_size]
+                self.inpt: shared_data[i*mbs: \
+                                       (i+1)* mbs]
             })
-        num_batches = len(data)/batch_size
+        num_batches = len(data)/mbs
         out = np.asarray([fwd(j) for j in xrange(num_batches)])
         del shared_data
         return out.reshape(out.shape[0] * out.shape[1], out.shape[2])
@@ -440,39 +479,39 @@ class AutoencoderLayer(Layer):
 
         return (cost, updates)
 
-    def train(self, training_data=None, ff_layers=[], metric_recorder=None,
-              batch_size=200, eta=0.25, epochs=1, level=0):
+    def train(self, tdata=None, ff_layers=[], metric_recorder=None,
+              mbs=200, eta=0.25, epochs=1, level=0):
         index = T.lscalar() # Minibatch index
         x = T.matrix("x") # Inputdata
 
-        self.set_inpt(x, x, batch_size)
+        self.set_inpt(x, x, mbs)
         cost, updates = self.get_cost_updates(eta=eta)
 
         # Prepare Theano shared variables with the shape and type of
         # The train, valid batches.
-        train_x_zeros, _ = training_data.next()
+        train_x_zeros, _ = tdata.next()
         for l in ff_layers: train_x_zeros = l.forward(train_x_zeros)
         training_x = tshared(train_x_zeros)
-        training_data.reset()
+        tdata.reset()
 
         # compute number of minibatches for training, validation and testing
-        num_training_batches = size(training_x) / batch_size
+        n_train_batches = size(training_x) / mbs
 
         train_mb = theano.function(
             [index],
             cost,
             updates=updates,
             givens={
-                x: training_x[index * batch_size: (index + 1) * batch_size]
+                x: training_x[index * mbs: (index + 1) * mbs]
             }
         )
 
         for epoch in xrange(epochs):
             c = []
-            for train_x, _ in training_data:
+            for train_x, _ in tdata:
                 for l in ff_layers: train_x = l.forward(train_x)
                 training_x.set_value(train_x, borrow=True)
-                for batch_index in xrange(num_training_batches):
+                for batch_index in xrange(n_train_batches):
                     c.append(train_mb(batch_index))
 
             print "Trainig epoch %d, cost %f" % (epoch, np.mean(c))
@@ -525,12 +564,12 @@ class FullyConnectedLayer():
                          'b')
         self.params = [self.w, self.b]
 
-    def set_inpt(self, inpt, inpt_dropout, batch_size):
-        self.inpt = inpt.reshape((batch_size, self.n_in))
+    def set_inpt(self, inpt, inpt_dropout, mbs):
+        self.inpt = inpt.reshape((mbs, self.n_in))
         self.output = self.activation_fn(
             (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
         self.inpt_dropout = dropout_layer(
-            inpt_dropout.reshape((batch_size, self.n_in)), self.p_dropout,
+            inpt_dropout.reshape((mbs, self.n_in)), self.p_dropout,
             rnd=self.rnd)
         self.output_dropout = self.activation_fn(
             T.dot(self.inpt_dropout, self.w) + self.b)

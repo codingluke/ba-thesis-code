@@ -15,7 +15,7 @@ from preprocessor import BatchImgProcessor
 
 def train(job_id, border, n_hidden_layer, eta, lmbda):
     starttime = timer()
-    mini_batch_size = 500
+    mbs = 500
 
     BatchProcessor = BatchImgProcessor.load(
         X_dirpath='../../../data/train/*',
@@ -32,12 +32,12 @@ def train(job_id, border, n_hidden_layer, eta, lmbda):
     n_in = (2*border+1)**2
     net = Network([FullyConnectedLayer(n_in=n_in, n_out=n_hidden_layer),
                    FullyConnectedLayer(n_in=n_hidden_layer, n_out=1)],
-                  mini_batch_size)
+                  mbs)
 
-    result = net.SGD(training_data=training_data, epochs=100,
-            batch_size=mini_batch_size, eta=eta,
-            validation_data=validation_data, lmbda=lmbda,
-            momentum=None, patience=20000, patience_increase=2,
+    result = net.train(tdata=training_data, epochs=100,
+            mbs=mbs, eta=eta,
+            vdata=validation_data, lmbda=lmbda,
+            momentum=None, patience_increase=2,
             improvement_threshold=0.995, validation_frequency=5000)
 
     endtime = timer()

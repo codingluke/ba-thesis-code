@@ -60,7 +60,7 @@ print "Validation size: %d" % len(validation_data)
 
 n_in = (2*border+1)**2
 
-mini_batch_size = 500
+mbs = 500
 
 net = Network([
         AutoencoderLayer(n_in=n_in, n_hidden=190, corruption_level=0.14,
@@ -68,7 +68,7 @@ net = Network([
         AutoencoderLayer(n_in=190, n_hidden=81, corruption_level=0.14,
           rnd=rnd),
         FullyConnectedLayer(n_in=81, n_out=1, rnd=rnd),
-    ], mini_batch_size)
+    ], mbs)
 
 # image = PIL.Image.fromarray(tile_raster_images(
         # X=net.layers[0].w.get_value(borrow=True).T,
@@ -81,17 +81,17 @@ print "Savedir : " + save_dir
 
 print '...start pretraining'
 #net.pretrain_autoencoders(
-#    training_data=pretrain_data,
-#    batch_size=mini_batch_size,
+#    tdata=pretrain_data,
+#    mbs=mbs,
 #    eta=0.03, epochs=15,
 #    metric_recorder=mr, save_dir=save_dir)
 
 training_data.reset()
 print '...start training'
-net.train(training_data=training_data, epochs=15,
-        batch_size=mini_batch_size, eta=0.045, eta_min=0.01,
-        validation_data=validation_data, lmbda=0.0,
-        momentum=0.0, patience=20000, patience_increase=2,
+net.train(tdata=training_data, epochs=15,
+        mbs=mbs, eta=0.045, eta_min=0.01,
+        vdata=validation_data, lmbda=0.0,
+        momentum=0.0, patience_increase=2,
         improvement_threshold=0.995, validation_frequency=1,
         save_dir=save_dir, metric_recorder=mr, algorithm='rmsprop')
 

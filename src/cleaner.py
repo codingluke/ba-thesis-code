@@ -43,7 +43,7 @@ class Cleaner(object):
         w, h = p.X_img.shape
         orig = np.resize(y2, (w-2*self.border,h-2*self.border)) * 255
         del p, patches
-        return PIL.Image.fromarray(orig), td
+        return PIL.Image.fromarray(orig), id
 
     def clean_and_show(self, img_path=None):
         img, _ = self.clean(img_path)

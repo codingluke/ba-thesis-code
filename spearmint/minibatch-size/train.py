@@ -16,7 +16,7 @@ from metric import MetricRecorder
 
 rnd = np.random.RandomState()
 
-def train(job_id, minibatch_size):
+def train(job_id, mbs):
     #print "Job ID: %d" % job_id
     eta = 0.01 # 1-7 0.01
     border = 2
@@ -35,7 +35,8 @@ def train(job_id, minibatch_size):
         'lmbda' : 0.0,
         'training_size' : None,
         'validation_size' : None,
-        'algorithm' : 'RMSProp'
+        'algorithm' : 'RMSProp',
+        'mini_batch_size': mbs
     }
 
     training_data = BatchImgProcessor(
@@ -73,13 +74,12 @@ def train(job_id, minibatch_size):
                     rnd=rnd),
                    FullyConnectedLayer(n_in=n_hidden_layer, n_out=1,
                     rnd=rnd)],
-                  minibatch_size)
+                  C['mini_batch_size'])
 
-    result = net.train(training_data=training_data, epochs=C['epochs'],
-                     batch_size=minibatch_size, eta=eta,
-                     validation_data=validation_data, lmbda=C['lmbda'],
-                     momentum=None, patience=C['patience'],
-                     patience_increase=C['patience_increase'],
+    result = net.train(tdata=training_data, epochs=C['epochs'],
+                     mbs=C['mini_batch_size'], eta=eta,
+                     vdata=validation_data, lmbda=C['lmbda'],
+                     momentum=None, patience_increase=C['patience_increase'],
                      improvement_threshold=C['improvement_threshold'],
                      validation_frequency=C['validation_frequency'],
                      metric_recorder=metric_recorder,

@@ -24,8 +24,8 @@ class TestNetwork(unittest.TestCase):
         border = 2
         self.n_in = (2*border+1)**2
         self.pretrain = BatchImgProcessor(
-          X_dirpath='../data/train_cleaned/*',
-          y_dirpath='../data/train_cleaned/',
+          X_dirpath=config.data_dir_path + 'train_cleaned/*',
+          y_dirpath=config.data_dir_path + 'train_cleaned/',
           batchsize=5000,
           border=border,
           limit=1,
@@ -33,7 +33,6 @@ class TestNetwork(unittest.TestCase):
           dtype=theano.config.floatX,
           modus='full', random=True,
           rnd=rnd)
-        # self.pretrain_data = BA1(modus='full', random=True)
 
     def test_to_string(self):
         net = Network([
@@ -47,7 +46,37 @@ class TestNetwork(unittest.TestCase):
         test_s = "Ae[sgm](25, 22)-dAe[sgm, 0.100](22, 19)-FC(19, 1)"
         self.assertEqual(layers, test_s)
 
-    # @unittest.skipUnless(config.slow, 'slow tes,c t')
+    @unittest.skipUnless(config.slow, 'slow test')
+    def test_train(self):
+        border = 2
+        mbs = 500
+        n_in = (2*border+1)**2
+        tdata = BatchImgProcessor(
+          X_dirpath=config.data_dir_path + 'train/*',
+          y_dirpath=config.data_dir_path + 'train_cleaned/',
+          batchsize=5000, border=border,
+          limit=2, dtype=theano.config.floatX,
+          modus='full', random=True, random_mode='fully',
+          rnd=rnd)
+        vdata = BatchImgProcessor(
+          X_dirpath=config.data_dir_path + 'train/*',
+          y_dirpath=config.data_dir_path + 'train_cleaned/',
+          batchsize=5000, border=border,
+          limit=1, dtype=theano.config.floatX,
+          modus='full', random=False, rnd=rnd)
+        net = Network([
+                FullyConnectedLayer(n_in=25, n_out=19, rnd=rnd),
+                FullyConnectedLayer(n_in=19, n_out=1, rnd=rnd),
+              ], mbs)
+        cost = net.train(tdata=tdata, epochs=1, mbs=mbs, eta=0.1,
+                         eta_min=0.01, vdata=vdata, lmbda=0.0,
+                         momentum=0.95, patience_increase=2,
+                         improvement_threshold=0.995,
+                         validation_frequency=1, algorithm='rmsprop',
+                         early_stoping=False)
+        self.assertTrue(float(cost) < 1.0)
+
+    @unittest.skipUnless(config.slow, 'slow test')
     def test_pretrain(self):
         n_in = self.n_in
         mini_batch_size = 200
@@ -59,7 +88,7 @@ class TestNetwork(unittest.TestCase):
         ], mini_batch_size)
 
         net.pretrain_autoencoders(
-            training_data=self.pretrain,
-            batch_size=mini_batch_size,
+            tdata=self.pretrain,
+            mbs=mini_batch_size,
             eta=0.025, epochs=1)
         pass

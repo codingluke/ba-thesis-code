@@ -58,11 +58,10 @@ def train(job_id, border, n_hidden_layer, eta):
                    FullyConnectedLayer(n_in=n_hidden_layer, n_out=1)],
                   C['mini_batch_size'])
 
-    result = net.train(training_data=training_data, epochs=C['epochs'],
-                     batch_size=C['mini_batch_size'], eta=eta,
-                     validation_data=validation_data, lmbda=C['lmbda'],
-                     momentum=None, patience=C['patience'],
-                     patience_increase=C['patience_increase'],
+    result = net.train(tdata=training_data, epochs=C['epochs'],
+                     mbs=C['mini_batch_size'], eta=eta,
+                     vdata=validation_data, lmbda=C['lmbda'],
+                     momentum=None, patience_increase=C['patience_increase'],
                      improvement_threshold=C['improvement_threshold'],
                      validation_frequency=C['validation_frequency'],
                      metric_recorder=metric_recorder)
