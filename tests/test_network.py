@@ -55,7 +55,7 @@ class TestNetwork(unittest.TestCase):
           X_dirpath=config.data_dir_path + 'train/*',
           y_dirpath=config.data_dir_path + 'train_cleaned/',
           batchsize=5000, border=border,
-          limit=2, dtype=theano.config.floatX,
+          limit=1, dtype=theano.config.floatX,
           modus='full', random=True, random_mode='fully',
           rnd=rnd)
         vdata = BatchImgProcessor(
