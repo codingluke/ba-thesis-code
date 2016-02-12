@@ -1,16 +1,27 @@
 # coding: utf-8
+"""metric.py
+~~~~~~~
+A program dependent on pymongo and pandas, to store,
+visualize and compair training processes of  neural networks.
 
+It uses configfiles with the same structure of the spearmint
+package for compatibility.
+"""
+
+# standard libraries
 import os, sys, json
+import re
 import numpy as np
-import pdb
-from timeit import default_timer as timer
 from collections import OrderedDict
-from pymongo import MongoClient
+
+# third-party libraries
 import pandas as pd
 import matplotlib.pyplot as plt
-import re
+from timeit import default_timer as timer
+from pymongo import MongoClient
 from pandas.tools.plotting import table
-plt.style.use('ggplot')
+
+plt.style.use('ggplot') # nicer style
 
 class MetricReader(object):
 
