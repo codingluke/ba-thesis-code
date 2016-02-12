@@ -1,29 +1,33 @@
-"""network3.py
+"""network.py
 ~~~~~~~
 
-A Theano-based program for training and running simple neural
-networks.
+A Theano-based program for training and running simple and
+deep neural networks.
 
-Supports several layer types (fully connected, convolutional, max
-pooling, softmax), and activation functions (sigmoid, tanh, and
-rectified linear units, with more easily added).
+It supports the layer types fully connected and denoising autoencoder,
+where the latter also can be stacked.
 
-When run on a CPU, this program is much faster than network.py and
-network2.py.  However, unlike network.py and network2.py it can also
-be run on a GPU, which makes it faster still.
+The training and validation data has to be in form of a
+python Iterater, which gives back the X and y as indipendent
+numpy arrays.
 
-Because the code is based on Theano, the code is different in many
-ways from network.py and network2.py.  However, where possible I have
-tried to maintain consistency with the earlier programs.  In
-particular, the API is similar to network2.py.  Note that I have
-focused on making the code simple, easily readable, and easily
-modifiable.  It is not optimized, and omits many desirable features.
+The training can be stored by a metric_recorder Class. It
+has to have the method 'record' following signature.
 
-This program incorporates ideas from the Theano documentation on
-convolutional neural nets (notably,
-http://deeplearning.net/tutorial/lenet.html ), from Misha Denil's
+    record(self, job_id=None, cost=None, validation_accuracy=None,
+           epoch=None, iteration=None, second=None, type='train',
+           eta=None)
+
+This program is highly inspired by Michael Nielsen (http://neuralnetworksanddeeplearning.com, notably
+github.com/mnielsen/neural-networks-and-deep-learning/blob/master/src/network3.py)
+It incorporates ideas from the Theano documentation on
+multilayer neural nets and stacked denoising autoencoder (notably,
+http://deeplearning.net/tutorial/mlp.htm, and
+http://deeplearning.net/tutorial/SdA.html), from Misha Denil's
 implementation of dropout (https://github.com/mdenil/dropout ), and
 from Chris Olah (http://colah.github.io ).
+Future more it uses the implementation of the rmsprop algorithmus
+by Alec Radford (github.com/Newmu/Theano-Tutorials/blob/master/4_modern_net.py)
 
 """
 
@@ -37,18 +41,14 @@ import pdb
 import numpy as np
 import theano
 import theano.tensor as T
-from theano.tensor.nnet import conv
 from theano.tensor.nnet import softmax
 from theano.tensor import shared_randomstreams
-from theano.tensor.signal import downsample
 from theano.tensor.shared_randomstreams import RandomStreams
-import abc
 
 # Activation functions for neurons
 def linear(z): return z
 def ReLU(z): return T.maximum(0.0, z)
 from theano.tensor.nnet import sigmoid
-from theano.tensor import tanh
 
 static_rnd = np.random.RandomState()
 
