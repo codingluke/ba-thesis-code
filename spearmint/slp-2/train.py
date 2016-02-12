@@ -17,17 +17,21 @@ def train(job_id, border, n_hidden_layer, eta, lmbda):
     starttime = timer()
     mbs = 500
 
-    BatchProcessor = BatchImgProcessor.load(
+    training_data = BatchImgProcessor(
         X_dirpath='../../../data/train/*',
         y_dirpath='../../../data/train_cleaned/',
         batchsize=500000,
         border=border,
         limit=20,
-        train_stepover=8,
         dtype=theano.config.floatX)
 
-    training_data = BatchProcessor(modus='train', random=True)
-    validation_data = BatchProcessor(modus='valid')
+    validation_data = BatchImgProcessor(
+        X_dirpath='../../../data/valid/*',
+        y_dirpath='../../../data/train_cleaned/',
+        batchsize=500000,
+        border=border,
+        limit=20,
+        dtype=theano.config.floatX)
 
     n_in = (2*border+1)**2
     net = Network([FullyConnectedLayer(n_in=n_in, n_out=n_hidden_layer),

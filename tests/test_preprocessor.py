@@ -15,36 +15,24 @@ rnd = np.random.RandomState(232342)
 class TestBatchImgProcessor(unittest.TestCase):
 
     def setUp(self):
-        self.full_batch = BatchImgProcessor(
-            X_dirpath='./tests/data/train/*',
-            y_dirpath='./tests/data/test/',
-            batchsize=100,
-            border=1,
-            limit=None,
-            train_stepover=8,
-            modus='full',
-            rnd=rnd)
         self.train_batch = BatchImgProcessor(
             X_dirpath='./tests/data/train/*',
             y_dirpath='./tests/data/test/',
             batchsize=100,
             border=1,
             limit=None,
-            train_stepover=8,
-            modus='train', rnd=rnd)
+            rnd=rnd)
+
         self.valid_batch = BatchImgProcessor(
-            X_dirpath='./tests/data/train/*',
+            X_dirpath='../tests/data/valid/*',
             y_dirpath='./tests/data/test/',
             batchsize=100,
             border=1,
             limit=None,
-            train_stepover=8,
-            modus='valid', rnd=rnd)
+            rnd=rnd)
 
     def tearDown(self):
-        del self.full_batch
-        del self.train_batch
-        del self.valid_batch
+        del self.train_batch, self.valid_batch
 
     def test_iterating(self):
         test1 = [(X,y) for X, y in self.train_batch]
@@ -106,26 +94,26 @@ class TestBatchImgProcessor(unittest.TestCase):
 
     def test_len(self):
         # Pixels manually calculated according test images
-        pixels = 50*34*3 / self.full_batch.batchsize
-        self.assertEqual(len(self.full_batch), pixels)
+        pixels = 50*34*3 / self.train_batch.batchsize
+        self.assertEqual(len(self.train_batch), pixels)
 
     def test_consitency(self):
-        ds = self.full_batch.next()
-        self.full_batch.reset()
-        ds2 = self.full_batch.next()
+        ds = self.train_batch.next()
+        self.train_batch.reset()
+        ds2 = self.train_batch.next()
         center_index = (len(ds[0][0]) - 1) / 2
         self.assertEqual(ds[0][0][center_index], ds2[0][0][center_index])
 
     def test_randomness(self):
-        self.full_batch.random = True
-        X, y = self.full_batch.next()
-        self.full_batch.reset()
-        X2, y2 = self.full_batch.next()
+        self.train_batch.random = True
+        X, y = self.train_batch.next()
+        self.train_batch.reset()
+        X2, y2 = self.train_batch.next()
         center_index = (len(X[0]) - 1) / 2
         self.assertNotEqual(X[0][center_index], X2[0][center_index])
         self.assertNotEqual(X[-1][center_index], X2[-1][center_index])
 
-        X3, y3 = self.full_batch.next()
+        X3, y3 = self.train_batch.next()
         center_index = (len(X[0]) - 1) / 2
         self.assertNotEqual(X[0][center_index], X3[0][center_index])
         self.assertNotEqual(X[-1][center_index], X3[-1][center_index])
@@ -153,10 +141,6 @@ class TestBatchImgProcessor(unittest.TestCase):
         trainl = len(self.train_batch)
         trainl2 = len([x for x in self.train_batch])
         self.assertEqual(trainl, trainl2)
-
-        fulll = len(self.full_batch)
-        fulll2 = len([x for x in self.full_batch])
-        self.assertEqual(fulll, fulll2)
 
     def test_next_fully_random(self):
         set = self.train_batch.next_fully_random()
@@ -202,10 +186,8 @@ class TestPreprocessor(unittest.TestCase):
             train_stepover=8, rnd=rnd)
 
     def test_sliding_window(self):
-        ds1 = self.preprocessor._get_X_fast()
-        ds2 = self.preprocessor._get_X_fast(modus='train')
-        ds3 = self.preprocessor._get_X_fast(modus='valid')
-
+        x1 = self.preprocessor._get_X_fast()
+        x2 = self.preprocessor._get_X()
         y1 = self.preprocessor._get_y_fast()
         y2 = self.preprocessor._get_y()
         pass
@@ -247,18 +229,6 @@ class TestPreprocessor(unittest.TestCase):
             self.preprocessor.set_border(border)
             ds = self.preprocessor.get_dataset()
             self.assertEqual(len(ds[0][0]), (2*border+1)**2)
-
-    def test_valid_train_difference(self):
-        full_set = self.preprocessor.get_dataset()
-        train_set = self.preprocessor.get_dataset(modus='train')
-        valid_set = self.preprocessor.get_dataset(modus='valid')
-        count = 0
-        for Xv, yv in valid_set:
-          for Xt, yt in train_set:
-            eq = np.array_equal(Xv, Xt)
-            if eq: count += 1; break
-          if eq: break
-        self.assertEqual(count, 0)
 
     def test_patches_amounth(self):
         shape = np.array(PIL.Image.open(self.preprocessor.X_imgpath)).shape
@@ -310,5 +280,3 @@ class TestPreprocessor(unittest.TestCase):
         self.assertEqual(y[0], img_array[0])
         self.assertEqual(y[len(y) / 2], img_array[len(y) / 2])
         self.assertEqual(y[-1], img_array[-1])
-
-

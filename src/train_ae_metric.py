@@ -1,10 +1,7 @@
 # coding: utf-8
 
 import numpy as np
-import load_data as l
 import PIL.Image
-import cPickle
-import pdb
 import theano
 from utils import tile_raster_images
 from timeit import default_timer as timer
@@ -16,11 +13,9 @@ from engine import Cleaner
 from metric import MetricRecorder
 
 rnd = np.random.RandomState()
-
-mr = MetricRecorder(config_dir_path='./sae.json')
-mr.start()
-
 border = 2
+n_in = (2*border+1)**2
+mbs = 500
 
 pretrain_data = BatchImgProcessor(
     X_dirpath='../../data/onetext_pretrain_small/*',
@@ -30,7 +25,7 @@ pretrain_data = BatchImgProcessor(
     limit=None,
     dtype=theano.config.floatX,
     random_mode='fully',
-    random=True, modus='full', rnd=rnd)
+    random=True, rnd=rnd)
 
 training_data = BatchImgProcessor(
     X_dirpath='../../data/onetext_train_small/*',
@@ -40,7 +35,7 @@ training_data = BatchImgProcessor(
     limit=None,
     dtype=theano.config.floatX,
     random_mode='fully',
-    modus='full', random=True, rnd=rnd)
+    random=True, rnd=rnd)
 
 validation_data = BatchImgProcessor(
     X_dirpath='../../data/onetext_valid_small/*',
@@ -49,18 +44,14 @@ validation_data = BatchImgProcessor(
     border=border,
     limit=None,
     dtype=theano.config.floatX,
-    modus='full', random=False, rnd=rnd)
+    random=False, rnd=rnd)
 
-# training_data = BA2(modus='full', random=True)
-# validation_data = BA3(modus='full', random=False)
+mr = MetricRecorder(config_dir_path='./sae.json')
+mr.start()
 
 print "Pretrain size: %d" % len(training_data)
 print "Training size: %d" % len(training_data)
 print "Validation size: %d" % len(validation_data)
-
-n_in = (2*border+1)**2
-
-mbs = 500
 
 net = Network([
         AutoencoderLayer(n_in=n_in, n_hidden=190, corruption_level=0.14,

@@ -1,11 +1,8 @@
 # coding: utf-8
 
 import numpy as np
-import load_data as l
-
 import PIL.Image
 import cPickle
-import pdb
 import theano
 from timeit import default_timer as timer
 
@@ -14,29 +11,27 @@ from preprocessor import BatchImgProcessor
 from metric import MetricRecorder
 
 rnd = np.random.RandomState()
-
-
 border = 2
 
 training_data = BatchImgProcessor(
     X_dirpath='../../data/onetext_train_small/*',
     y_dirpath='../../data/train_cleaned/',
     batchsize=2000000, border=border, limit=None,
-    random=True, random_mode='fully', modus='full',
+    random=True, random_mode='fully',
     dtype=theano.config.floatX, rnd=rnd)
 
 validation_data = BatchImgProcessor(
     X_dirpath='../../data/onetext_valid_small/*',
     y_dirpath='../../data/train_cleaned/',
     batchsize=2000000, border=border, limit=None,
-    random=False, modus='full', rnd=rnd,
+    random=False, rnd=rnd,
     dtype=theano.config.floatX)
 
 pretrain_data = BatchImgProcessor(
     X_dirpath='../../data/onetext_pretrain_small/*',
     y_dirpath='../../data/train_cleaned/',
     batchsize=50000, border=border, limit=None,
-    random=True, modus='full', random_mode='fully', rnd=rnd,
+    random=True, random_mode='fully', rnd=rnd,
     dtype=theano.config.floatX)
 
 #for cl in [0.1, 0.2, 0.3, 0.4, 0.5]:

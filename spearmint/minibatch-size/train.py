@@ -45,10 +45,10 @@ def train(job_id, mbs):
         batchsize=C['batchsize'],
         border=border,
         limit=C['limit'],
-        train_stepover=8,
         random=True,
+        random_mode='fully',
         dtype=theano.config.floatX,
-        rnd=rnd, modus='train')
+        rnd=rnd)
 
     validation_data = BatchImgProcessor(
         X_dirpath='../../../data/train/*',
@@ -57,9 +57,8 @@ def train(job_id, mbs):
         random=False,
         border=border,
         limit=C['limit'],
-        train_stepover=8,
         dtype=theano.config.floatX,
-        rnd=rnd, modus='valid')
+        rnd=rnd)
 
     C['training_size'] = training_data.actual_full_length()
     C['validation_size'] = validation_data.actual_full_length()

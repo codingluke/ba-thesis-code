@@ -33,9 +33,9 @@ class TestCleaner(unittest.TestCase):
 
 class TestCleaner(unittest.TestCase):
 
-    @unittest.skipUnless(config.slow, 'slow test')
+    # @unittest.skipUnless(config.slow, 'slow test')
     def test_clean(self):
-        img = confi.data_dir_path + 'test/10.png'
+        img = config.data_dir_path + 'test/10.png'
         PIL.Image.open(img).show()
 
         e = Cleaner('./tests/data/models/13_72000_model.pkl')

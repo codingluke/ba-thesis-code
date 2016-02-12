@@ -29,9 +29,8 @@ class TestNetwork(unittest.TestCase):
           batchsize=5000,
           border=border,
           limit=1,
-          train_stepover=8,
           dtype=theano.config.floatX,
-          modus='full', random=True,
+          random=True,
           rnd=rnd)
 
     def test_to_string(self):
@@ -56,14 +55,14 @@ class TestNetwork(unittest.TestCase):
           y_dirpath=config.data_dir_path + 'train_cleaned/',
           batchsize=5000, border=border,
           limit=1, dtype=theano.config.floatX,
-          modus='full', random=True, random_mode='fully',
+          random=True, random_mode='fully',
           rnd=rnd)
         vdata = BatchImgProcessor(
           X_dirpath=config.data_dir_path + 'train/*',
           y_dirpath=config.data_dir_path + 'train_cleaned/',
           batchsize=5000, border=border,
           limit=1, dtype=theano.config.floatX,
-          modus='full', random=False, rnd=rnd)
+          random=False, rnd=rnd)
         net = Network([
                 FullyConnectedLayer(n_in=25, n_out=19, rnd=rnd),
                 FullyConnectedLayer(n_in=19, n_out=1, rnd=rnd),

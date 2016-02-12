@@ -54,7 +54,7 @@ def train(job_id, params):
         random=True,
         random_mode='fully',
         dtype=theano.config.floatX,
-        rnd=rnd, modus='full')
+        rnd=rnd)
 
     validation_data = BatchImgProcessor(
         X_dirpath=C['X_valid_dirpath'],
@@ -64,7 +64,7 @@ def train(job_id, params):
         limit=C['limit'],
         random=False,
         dtype=theano.config.floatX,
-        rnd=rnd, modus='full')
+        rnd=rnd)
 
     C['training_size'] = training_data.actual_full_length()
     C['validation_size'] = validation_data.actual_full_length()

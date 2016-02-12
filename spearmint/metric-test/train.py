@@ -34,17 +34,22 @@ def train(job_id, border, n_hidden_layer, eta):
         'algorithm' : 'RMSProp'
     }
 
-    BatchProcessor = BatchImgProcessor.load(
+    training_data = BatchImgProcessor(
         X_dirpath='../../../data/train/*',
         y_dirpath='../../../data/train_cleaned/',
         batchsize=C['batchsize'],
         border=border,
         limit=C['limit'],
-        train_stepover=8,
         dtype=theano.config.floatX)
 
-    training_data = BatchProcessor(modus='train', random=True)
-    validation_data = BatchProcessor(modus='valid')
+    validation_data = BatchImgProcessor.load(
+        X_dirpath='../../../data/valid/*',
+        y_dirpath='../../../data/train_cleaned/',
+        batchsize=C['batchsize'],
+        border=border,
+        limit=C['limit'],
+        dtype=theano.config.floatX)
+
     C['training_size'] = len(training_data)
     C['validation_size'] = len(validation_data)
     print "Training size: %d" % C['training_size']

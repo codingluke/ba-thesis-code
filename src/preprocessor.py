@@ -4,16 +4,14 @@ import numpy as np
 import os.path
 import PIL.Image
 import PIL.ImageOps
-import sys
 import glob
-import pdb
 
 from itertools import izip
 from numpy.lib.stride_tricks import as_strided as ast
 
 class BatchImgProcessor(object):
 
-    def __init__(self, modus='full', random=False, slow=False,
+    def __init__(self, random=False, slow=False,
                  X_dirpath=None, y_dirpath=None, border=3,
                  train_stepover=8, limit=None, batchsize=None,
                  dtype='float32', random_mode='normal', rnd=None):
@@ -30,7 +28,6 @@ class BatchImgProcessor(object):
                                              border=border, rnd=rnd)
                              for img in glob.glob(X_dirpath)[:limit]]
         self.slow = slow
-        self.to_modus(modus)
         self.random = random
         self.i = 0
         self.i_preprocessor = 0
@@ -38,25 +35,13 @@ class BatchImgProcessor(object):
         self.random_mode = random_mode
         self.rnd = rnd
 
-    def to_modus(self, modus='full'):
-        self.modus = modus
-
-    def to_train_modus(self):
-        self.to_modus('train')
-
-    def to_full_modus(self):
-        self.to_modus('full')
-
-    def to_valid_modus(self):
-        self.to_modus('valid')
-
     def __len__(self):
         return int(self.full_lenght() / self.batchsize)
 
     def full_lenght(self):
         length = 0
         for p in self.preprocessors:
-            length += p.length(modus=self.modus, slow=self.slow)
+            length += p.length(slow=self.slow)
         return length
 
     def num_lost_datasets(self):
@@ -86,8 +71,7 @@ class BatchImgProcessor(object):
                 return self.next_fully_random()
             if len(self.buffer) <= self.batchsize:
                 for p in self.preprocessors[self.i_preprocessor:]:
-                    self.buffer.extend(p.get_dataset(modus=self.modus,
-                                                     slow=self.slow))
+                    self.buffer.extend(p.get_dataset(slow=self.slow))
                     self.i_preprocessor += 1
                     if len(self.buffer) >= self.batchsize: break
             batch = np.asarray(self.buffer[:self.batchsize])
@@ -125,33 +109,12 @@ class ImgPreprocessor(object):
         self.stepover = train_stepover
         self.rnd = rnd
 
-    def get_dataset(self, modus=None, slow=False):
-        if slow:
-            return zip(self._get_X(modus=modus), self._get_y(modus=modus))
-        else:
-            return zip(self._get_X_fast(modus=modus),
-                       self._get_y_fast(modus=modus))
+    def get_dataset(self, slow=False):
+        if slow: return zip(self._get_X(), self._get_y())
+        else: return zip(self._get_X_fast(), self._get_y_fast())
 
-
-    def length(self, modus=None, slow=False):
-        if slow:
-            return self.length_slow(modus=modus)
-        if modus == None or modus == 'full':
-            return self.pixels
-        else:
-            if modus == 'train':
-                return self.pixels * 0.8
-            if modus == 'valid':
-                return self.pixels * (1 - 0.8)
-
-    def length_slow(self, modus=None):
-        if modus == None or modus == 'full':
-            return self.pixels
-        else:
-            x, y = self._get_range(self.X_img.size, modus=modus)
-            lenx = len([i for i in x])
-            leny = len([i for i in y])
-            return (lenx * leny)
+    def length(self, slow=False):
+        return self.pixels
 
     def _load_images(self, X_imgpath, y_dirpath):
         name = os.path.basename(X_imgpath)
@@ -168,7 +131,7 @@ class ImgPreprocessor(object):
         self.pixels = pixels
         return X_img, y_img, pixels
 
-    def get_random_patch(self, modus=None):
+    def get_random_patch(self):
         b = self.border
         height, width = self.X_img.shape
         _x = self.rnd.randint(b, height-b)
@@ -176,24 +139,16 @@ class ImgPreprocessor(object):
         return self.X_img[_x-b:_x+b+1, _y-b:_y+b+1], \
                self.y_img[_x-b,_y-b]
 
-    def _get_y(self, modus=None):
-        # ary = np.array(self.y_img) / 255.
-        height_range, width_range = self._get_range(self.y_img.shape, modus=modus)
+    def _get_y(self):
+        height_range, width_range = self._get_range(self.y_img.shape)
         return np.asarray([self.y_img[x, y].flatten()
                            for x in height_range
                            for y in width_range])
 
-    def _get_y_fast(self, modus=None):
-        # ary = np.array(self.y_img) / 255.
-        patches = self.y_img.flatten().reshape(self.pixels, 1)
-        if modus == None or modus == 'full':
-            return patches
-        if modus == 'train':
-            return patches[:self.pixels*0.8]
-        if modus == 'valid':
-            return patches[self.pixels*0.8:]
+    def _get_y_fast(self):
+        return self.y_img.flatten().reshape(self.pixels, 1)
 
-    def _get_X(self, modus=None):
+    def _get_X(self):
         """Return an array of patch-images for each pixel of the image.
         The size of each patch is (self.border + 1, self.border + 1).
         To get patch-images for the boarder pixels, the images is expanded.
@@ -201,42 +156,27 @@ class ImgPreprocessor(object):
         percentage. 0 => black 1 => white.
         """
         b = self.border
-        # ext = np.asarray(PIL.ImageOps.expand(self.X_img, border=b, fill=0))
-        # ext = ext / 255.
         height_range, width_range = self._get_range(self.X_img.shape,
-                                                    border=b,
-                                                    modus=modus)
+                                                    border=b)
         return np.asarray([self.X_img[x-b:x+b+1, y-b:y+b+1].flatten()
                 for x in height_range
                 for y in width_range])
 
-    def _get_X_fast(self, modus=None):
+    def _get_X_fast(self):
         size = 2*self.border+1
         patches = sliding_window(self.X_img, (size, size),
                                  (1, 1)).reshape(self.pixels, size**2)
-        if modus == None or modus == 'full':
-            return patches
-        if modus == 'train':
-            return patches[:self.pixels*0.8]
-        if modus == 'valid':
-            return patches[self.pixels*0.8:]
+        return patches
 
     def set_border(self, border):
         self.border = border
         self.X_img, self.y_img, self.pixels = \
             self._load_images(self.X_imgpath, self.y_dirpath)
 
-    def _get_range(self, shape, border=0, modus=None):
+    def _get_range(self, shape, border=0):
         height, width = shape
-        if not modus or modus == 'full':
-            return xrange(border, height-border), \
-                   xrange(border, width-border)
-        elif modus == 'train':
-            return TrainRange(border, height-border, self.stepover), \
-                   TrainRange(border, width-border)
-        elif modus == 'valid':
-            return xrange(border, height-border, self.stepover), \
-                   xrange(border, width-border)
+        return xrange(border, height-border), \
+               xrange(border, width-border)
 
 class TrainRange(object):
 
