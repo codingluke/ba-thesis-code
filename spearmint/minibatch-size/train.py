@@ -48,7 +48,7 @@ def train(job_id, minibatch_size):
         random=True,
         dtype=theano.config.floatX,
         rnd=rnd, modus='train')
-    
+
     validation_data = BatchImgProcessor(
         X_dirpath='../../../data/train/*',
         y_dirpath='../../../data/train_cleaned/',
@@ -75,14 +75,14 @@ def train(job_id, minibatch_size):
                     rnd=rnd)],
                   minibatch_size)
 
-    result = net.SGD(training_data=training_data, epochs=C['epochs'],
+    result = net.train(training_data=training_data, epochs=C['epochs'],
                      batch_size=minibatch_size, eta=eta,
                      validation_data=validation_data, lmbda=C['lmbda'],
                      momentum=None, patience=C['patience'],
                      patience_increase=C['patience_increase'],
                      improvement_threshold=C['improvement_threshold'],
                      validation_frequency=C['validation_frequency'],
-                     metric_recorder=metric_recorder, 
+                     metric_recorder=metric_recorder,
                      save_dir='./model/%d_' % metric_recorder.job_id,
                      early_stoping=False)
 

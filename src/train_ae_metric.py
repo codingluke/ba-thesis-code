@@ -88,7 +88,7 @@ print '...start pretraining'
 
 training_data.reset()
 print '...start training'
-net.SGD(training_data=training_data, epochs=15,
+net.train(training_data=training_data, epochs=15,
         batch_size=mini_batch_size, eta=0.045, eta_min=0.01,
         validation_data=validation_data, lmbda=0.0,
         momentum=0.0, patience=20000, patience_increase=2,

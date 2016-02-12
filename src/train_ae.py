@@ -51,7 +51,7 @@ for cl in [0.2]:
     start = timer()
     mbs = 500
     net = Network([
-            AutoencoderLayer(n_in=(2*border+1)**2, n_hidden=190, 
+            AutoencoderLayer(n_in=(2*border+1)**2, n_hidden=190,
             rnd=rnd, corruption_level=cl),
             FullyConnectedLayer(n_in=190, n_out=1, rnd=rnd)
         ], mbs)
@@ -61,10 +61,10 @@ for cl in [0.2]:
     #                    batch_size=mbs, eta=0.01, epochs=15)
 
     print '...start training'
-    cost = net.SGD(training_data=training_data, epochs=15,
+    cost = net.train(training_data=training_data, epochs=15,
             batch_size=mbs, eta=0.045, eta_min=0.01,
             validation_data=validation_data, lmbda=0.0,
-            momentum=0.95, patience_increase=2, 
+            momentum=0.95, patience_increase=2,
             improvement_threshold=0.995, validation_frequency=1,
             save_dir=save_dir, metric_recorder=mr,
             algorithm='rmsprop', early_stoping=False)

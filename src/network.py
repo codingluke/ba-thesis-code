@@ -18,8 +18,8 @@ has to have the method 'record' following signature.
            epoch=None, iteration=None, second=None, type='train',
            eta=None)
 
-This program is highly inspired by Michael Nielsen (http://neuralnetworksanddeeplearning.com, notably
-github.com/mnielsen/neural-networks-and-deep-learning/blob/master/src/network3.py)
+This program depends on Michael Nielsen's
+github.com/mnielsen/neural-networks-and-deep-learning/blob/master/src/network3.py and extends it with many features like stacked denoising autoencoder.
 It incorporates ideas from the Theano documentation on
 multilayer neural nets and stacked denoising autoencoder (notably,
 http://deeplearning.net/tutorial/mlp.htm, and
@@ -162,7 +162,7 @@ class Network():
     def get_layer_dropout_string(self):
         return ", ".join([str(layer.p_dropout) for layer in self.layers])
 
-    def SGD(self, training_data=None, epochs=10, batch_size=100,
+    def train(self, training_data=None, epochs=10, batch_size=100,
             eta=0.025, validation_data=None, lmbda=0.0, momentum=0.0,
             patience=40000, patience_increase=2, improvement_threshold=0.995,
             validation_frequency=1, metric_recorder=None, save_dir=None,

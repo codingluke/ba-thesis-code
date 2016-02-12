@@ -20,7 +20,7 @@ def train(job_id, params):
     eta = params['eta']
     border = 2
     n_hidden_layer = params['hidden']
-    metric_recorder = MetricRecorder(config_dir_path='./config.json', 
+    metric_recorder = MetricRecorder(config_dir_path='./config.json',
                                      job_id=job_id)
     C = {
         'X_dirpath' : '../../../data/onetext_train_small/*',
@@ -55,7 +55,7 @@ def train(job_id, params):
         random_mode='fully',
         dtype=theano.config.floatX,
         rnd=rnd, modus='full')
-    
+
     validation_data = BatchImgProcessor(
         X_dirpath=C['X_valid_dirpath'],
         y_dirpath=C['y_dirpath'],
@@ -80,15 +80,15 @@ def train(job_id, params):
         FullyConnectedLayer(n_in=C['hidden'], n_out=1, rnd=rnd)],
         C['batch_size'])
 
-    result = net.SGD(training_data=training_data, epochs=C['epochs'],
-                     batch_size=C['batch_size'], eta=C['eta'], 
+    result = net.train(training_data=training_data, epochs=C['epochs'],
+                     batch_size=C['batch_size'], eta=C['eta'],
                      eta_min=C['eta_min'],
                      validation_data=validation_data, lmbda=C['lmbda'],
                      momentum=None, patience=C['patience'],
                      patience_increase=C['patience_increase'],
                      improvement_threshold=C['improvement_threshold'],
                      validation_frequency=C['validation_frequency'],
-                     metric_recorder=metric_recorder, 
+                     metric_recorder=metric_recorder,
                      save_dir='./models/%d_' % metric_recorder.job_id,
                      early_stoping=False)
 
@@ -103,5 +103,5 @@ def main(job_id, params):
     return train(job_id, params)
 
 if __name__ == '__main__':
-    main(1, {'l2' : [0.01], 'dropout' : [0.01], 
+    main(1, {'l2' : [0.01], 'dropout' : [0.01],
                 'hidden': [80], 'eta' : [0.04], 'eta_min':[0.001]})

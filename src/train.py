@@ -46,10 +46,10 @@ net = Network([
     ], mbs)
 
 print '...start training'
-cost = net.SGD(training_data=training_data, epochs=4,
+cost = net.train(training_data=training_data, epochs=4,
         batch_size=mbs, eta=0.1, eta_min=0.01,
         validation_data=validation_data, lmbda=0.0,
-        momentum=0.95, patience_increase=2, 
+        momentum=0.95, patience_increase=2,
         improvement_threshold=0.995, validation_frequency=3,
         save_dir=save_dir, metric_recorder=mr,
         algorithm='rmsprop', early_stoping=False)
