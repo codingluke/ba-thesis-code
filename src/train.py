@@ -1,14 +1,9 @@
 # coding: utf-8
 
 import numpy as np
-import load_data as l
-
-import PIL.Image
-import cPickle
-import pdb
 import theano
-from timeit import default_timer as timer
 
+from timeit import default_timer as timer
 from network import Network, FullyConnectedLayer, tanh, ReLU
 from preprocessor import BatchImgProcessor
 from metric import MetricRecorder

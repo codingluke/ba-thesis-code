@@ -4,8 +4,7 @@
 A Theano-based program for training and running simple and
 deep neural networks.
 
-It supports the layer types fully connected and denoising autoencoder,
-where the latter also can be stacked.
+It supports the layer types fully connected and denoising autoencoder. The latter can also can be stacked.
 
 The training and validation data has to be in form of a
 python Iterater, which gives back the X and y as indipendent
@@ -40,16 +39,15 @@ by Alec Radford (github.com/Newmu/Theano-Tutorials/blob/master/4_modern_net.py)
 """
 
 #### Libraries
+
 # Standard library
 import cPickle
-import gzip
 import pdb
 
 # Third-party libraries
 import numpy as np
 import theano
 import theano.tensor as T
-from theano.tensor.nnet import softmax
 from theano.tensor import shared_randomstreams
 from theano.tensor.shared_randomstreams import RandomStreams
 
@@ -86,10 +84,12 @@ class Network():
         self.meta = {}
 
     def __getstate__(self):
+        """Returns the attributes, which has to be stored by cPickle"""
         return (self.layers, self.mbs,
                 self.x, self.y, self.params, self.meta)
 
     def __setstate__(self, state):
+        """Recovers the state by setting the attributes loaded by cPickle"""
         layers = mbs = x = y = params = meta = None
         if len(state) == 5:
           layers, mbs, x, y, params = state
@@ -105,6 +105,8 @@ class Network():
         if meta: self.meta = meta
 
     def predict(self, data):
+        """Predicts the y's for a given set of Xs as data numpy.ndarray"""
+
         ext_size = self.mbs - (data.shape[0] % self.mbs)
         ext = np.zeros((ext_size, data.shape[1]))
         shape = (data.shape[0]+ext_size, data.shape[1])
@@ -120,12 +122,13 @@ class Network():
         return out.reshape(shape[0],out.shape[2])[:-ext_size]
 
     def save(self, filename='model.pkl'):
+        """Saves the model to a file a the given filename path"""
         f = open(filename, 'wb')
         cPickle.dump(self, f)
 
-    def pretrain_autoencoders(self, tdata=None, mbs=200,
-                              eta=0.25, epochs=1, metric_recorder=None,
-                              save_dir=None):
+    def pretrain_autoencoders(self, tdata=None, mbs=200, eta=0.25, epochs=1,
+                              metric_recorder=None, save_dir=None):
+        """Detects all AutoencoderLayer's and trains them layerwise."""
         aes = [layer
                for layer in self.layers
                if isinstance(layer, AutoencoderLayer)]
@@ -136,6 +139,8 @@ class Network():
         if save_dir: self.save(save_dir + "pretrained_model.pkl")
 
     def rms_prop(self, grads, lr):
+        """given the gradients and the learning rate, calculates the update
+        rules by the rmsprop algorithm and gives them back."""
         rho = 0.9
         epsilon = 1e-6
         updates = []
@@ -150,6 +155,9 @@ class Network():
         return updates
 
     def naive_sgd(self, grads=None, lr=None, momentum=0.0):
+        """given the gradients and the learning rate, calculates the update
+        rules by the stochastic gradient descent algorithm and gives them back.
+        Uses momentum when momentum is set."""
         if momentum == 0.0:
             return [(param, param-lr * grad)
                     for param, grad in zip(self.params, grads)]
@@ -164,9 +172,12 @@ class Network():
             return updates
 
     def get_layer_string(self):
+        """Returns a string representation of the layers for documentation."""
         return "-".join([layer.to_string() for layer in self.layers])
 
     def get_layer_dropout_string(self):
+        """Returns a sring representation of the dropout configuration
+        for documentation"""
         return ", ".join([str(layer.p_dropout) for layer in self.layers])
 
     def train(self, tdata=None, vdata=None, epochs=10, mbs=100, eta=0.025,
@@ -359,25 +370,30 @@ class Network():
 #### Define layer types
 
 class Layer():
+    """ 'Base' Class for layers """
 
     def set_inpt(self, inpt, inpt_dropout, mbs):
+        """Method to set the input variable to connect the layers."""
         return NotImplemented
 
     def to_string(self):
+        """Returns a string representation of the layer"""
         return NotImplemented
 
     def __getstate__(self):
+        """Returns the attributes, which has to be stored by cPickle"""
         return NotImplemented
 
     def __setstate__(self, state):
+        """Recovers the state by setting the attributes loaded by cPickle"""
         return NotImplemented
 
 
 class AutoencoderLayer(Layer):
+    """AutoencoderLayer with teight weitghts for a deep neural network."""
 
-    def __init__(self, n_in=None, n_hidden=None, w=None, b_hid=None,
-                 b_vis=None, activation_fn=sigmoid, p_dropout=0.0,
-                 corruption_level=0.0, rnd=static_rnd):
+    def __init__(self, n_in=None, n_hidden=None, activation_fn=sigmoid,
+                 p_dropout=0.0, corruption_level=0.0, rnd=static_rnd):
         self.n_in = n_in
         self.n_hidden = n_hidden
         self.activation_fn = activation_fn
@@ -385,34 +401,26 @@ class AutoencoderLayer(Layer):
         self.theano_rng = RandomStreams(rnd.randint(2 ** 30))
         self.corruption_level = corruption_level
         self.rnd = rnd
-        print n_in, n_hidden
 
-        if not w:
-            w = tshared(self.rnd.uniform(
-                        low=-np.sqrt(6. / (n_in + n_hidden)),
-                        high=np.sqrt(6. / (n_in + n_hidden)),
-                        size=(n_in, n_hidden)
-                    ), 'w')
-
-        if not b_vis:
-            b_vis = tshared(self.rnd.normal(loc=0.0, scale=1.0,
-                                            size=(n_in,)),
-                            'bvis')
-
-        if not b_hid:
-            b_hid = tshared(self.rnd.normal(loc=0.0, scale=1.0,
-                                            size=(n_hidden,)),
-                            'bhid')
-
-        self.w = w # shared weights
-        self.b = b_hid # bias for normal layer
-        self.b_prime = b_vis # visible bias for AE
-        self.w_prime = self.w.T # Hidden weights for AE
+        # shared weights
+        self.w = tshared(self.rnd.uniform(
+                    low=-np.sqrt(6. / (n_in + n_hidden)),
+                    high=np.sqrt(6. / (n_in + n_hidden)),
+                    size=(n_in, n_hidden)), 'w')
+        # bias for normal layer
+        self.b = tshared(self.rnd.normal(loc=0.0, scale=1.0,
+                                        size=(n_hidden,)), 'bhid')
+        # visible bias for AE
+        self.b_prime = tshared(self.rnd.normal(loc=0.0, scale=1.0,
+                                        size=(n_in,)), 'bvis')
+        self.w_prime = self.w.T # Hidden teights weights for AE
 
         self._params = [self.w, self.b, self.b_prime]
         self.params = [self.w, self.b]
 
     def set_inpt(self, inpt, inpt_dropout, mbs):
+        """Method to set the input variable to connect the layers."""
+
         self.inpt = inpt.reshape((mbs, self.n_in))
         self.output = self.activation_fn(
             (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
@@ -424,6 +432,7 @@ class AutoencoderLayer(Layer):
             T.dot(self.inpt_dropout, self.w) + self.b)
 
     def to_string(self):
+        """Returns a string representation of the layer"""
         af = 'sgm'
         if self.activation_fn == ReLU: af = 'rlu'
         if self.corruption_level == 0.0:
@@ -433,12 +442,15 @@ class AutoencoderLayer(Layer):
             (af, self.corruption_level, self.n_in, self.n_hidden)
 
     def get_corrupted_input(self):
+        """Returns a corrupted version of the input for denoising"""
         if self.corruption_level == 0.0: return self.inpt
         return self.theano_rng.binomial(size=self.inpt.shape, n=1,
                                   p=1 - self.corruption_level,
                                   dtype=theano.config.floatX) * self.inpt
 
     def forward(self, data, mbs=500):
+        """Forwards a given data set through the layer. Used for preprocess
+        data in a stacked autoencoder"""
         shared_data = tshared(data)
         i = T.lscalar() # mini-batch index
         fwd = theano.function(
@@ -453,12 +465,16 @@ class AutoencoderLayer(Layer):
         return out.reshape(out.shape[0] * out.shape[1], out.shape[2])
 
     def get_hidden_values(self, inpt):
+        """Calculates the values for the hidden layer"""
         return sigmoid(T.dot(inpt, self.w) + self.b)
 
     def get_reconstructed_input(self, hidden):
+        """reconstructs the input to the output layer"""
         return sigmoid(T.dot(hidden, self.w_prime) + self.b_prime)
 
     def get_cost_updates(self, eta=None):
+        """Returns costs and updates rules for training with the rmsprop
+        algorithm"""
         y = self.get_hidden_values(self.get_corrupted_input())
         z = self.get_reconstructed_input(y)
         cost = T.nnet.binary_crossentropy(z, self.inpt).mean()
@@ -481,6 +497,19 @@ class AutoencoderLayer(Layer):
 
     def train(self, tdata=None, ff_layers=[], metric_recorder=None,
               mbs=200, eta=0.25, epochs=1, level=0):
+        """Train the layer
+
+        Keyword arguments:
+
+        tdata     -- train data iterator (BatchImgProcessor)
+        epochs    -- number of epochs to train
+        mbs       -- Mini-Batch-Size for training
+        eta       -- learning rate max
+        ff_layers -- fastforward layers form autoencoders before,
+                     to preprocess the data
+        level     -- indicator of which layer is trained.
+        metric_recorder -- MetricRecorder instance to record the training
+        """
         index = T.lscalar() # Minibatch index
         x = T.matrix("x") # Inputdata
 
@@ -520,12 +549,14 @@ class AutoencoderLayer(Layer):
                                        type='pretrain_%d' % level)
 
     def __getstate__(self):
+        """Returns the attributes, which has to be stored by cPickle"""
         return(self.n_in, self.n_hidden, self.activation_fn, \
                self.p_dropout, self.inpt, self.output, self.inpt_dropout, \
                self.output_dropout, self.w, self.b, self.w_prime, \
                self.b_prime)
 
     def __setstate__(self, state):
+        """Recovers the state by setting the attributes loaded by cPickle"""
         n_in, n_hidden, activation_fn,  p_dropout, inpt, output, \
         inpt_dropout, output_dropout, w, b, w_prime, b_prime = state
 
@@ -565,6 +596,7 @@ class FullyConnectedLayer():
         self.params = [self.w, self.b]
 
     def set_inpt(self, inpt, inpt_dropout, mbs):
+        """Method to set the input variable to connect the layers."""
         self.inpt = inpt.reshape((mbs, self.n_in))
         self.output = self.activation_fn(
             (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
@@ -576,22 +608,26 @@ class FullyConnectedLayer():
         self.y_out = T.argmax(self.output, axis=1)
 
     def accuracy(self, y):
-        "Return the accuracy for the mini-batch."
+        """Return the accuracy for the mini-batch as RMSE"""
         return T.mean((y - self.output)**2) ** 0.5
 
     def to_string(self):
+        """Returns a string representation of the layer"""
         return "FC(%d, %d)" % (self.n_in, self.n_out)
 
     def cost(self, net):
+        """Returns the validation cost, here binary_crossentropy"""
         return T.nnet.binary_crossentropy(self.output_dropout, net.y).mean()
 
     def __getstate__(self):
+        """Returns the attributes, which has to be stored by cPickle"""
         return (self.n_in, self.n_out, self.activation_fn,
                 self.p_dropout, self.inpt, self.output,
                 self.y_out, self.inpt_dropout, self.output_dropout,
                 self.w, self.b)
 
     def __setstate__(self, state):
+        """Recovers the state by setting the attributes loaded by cPickle"""
         n_in, n_out, activation_fn, p_dropout, inpt, output, \
         y_out, inpt_dropout, output_dropout, w, b = state
         self.n_in = n_in
@@ -609,15 +645,17 @@ class FullyConnectedLayer():
 
 #### Miscellanea
 def size(data):
-    "Return the size of the dataset `data`."
+    """Returns the size of the dataset `data`."""
     return data.get_value(borrow=True).shape[0]
 
 def dropout_layer(layer, p_dropout, rnd=static_rnd):
+    """Mask the weights for random dropouts"""
     srng = shared_randomstreams.RandomStreams(
         rnd.randint(999999))
     mask = srng.binomial(n=1, p=1-p_dropout, size=layer.shape)
     return layer*T.cast(mask, theano.config.floatX)
 
 def tshared(data, name=None):
+    """Creates and returns a mutable theano shared variable"""
     dtype = theano.config.floatX
     return theano.shared(np.asarray(data, dtype=dtype), name=name, borrow=True)

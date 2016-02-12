@@ -46,7 +46,7 @@ class TestNetwork(unittest.TestCase):
         test_s = "Ae[sgm](25, 22)-dAe[sgm, 0.100](22, 19)-FC(19, 1)"
         self.assertEqual(layers, test_s)
 
-    @unittest.skipUnless(config.slow, 'slow test')
+    # @unittest.skipUnless(config.slow, 'slow test')
     def test_train(self):
         border = 2
         mbs = 500
@@ -76,7 +76,7 @@ class TestNetwork(unittest.TestCase):
                          early_stoping=False)
         self.assertTrue(float(cost) < 1.0)
 
-    @unittest.skipUnless(config.slow, 'slow test')
+    # @unittest.skipUnless(config.slow, 'slow test')
     def test_pretrain(self):
         n_in = self.n_in
         mini_batch_size = 200
