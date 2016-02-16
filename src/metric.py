@@ -28,6 +28,7 @@ class MetricReader(object):
 
     def __init__(self, config_dir_path=None):
         self.options = get_options(config_dir_path)
+        self.experiment_name = self.options['experiment-name']
         self.connection, self.db, self.metrics, self.meta, \
             self.trainings = self.__connect()
 
@@ -78,7 +79,8 @@ class MetricReader(object):
     def compair_plot(self, job_ids=[], colors=['r', 'g', 'b'],
                      titles=[1, 2, 3], figsize=(9,2.4), xytext=None,
                      experiment_names=[]):
-        if experiment_names and len(experiment_names) != len(job_ids):
+        if not experiment_names: exp_name = self.experiment_name
+        elif experiment_names and len(experiment_names) != len(job_ids):
             raise Exception("all job_ids must have an experiment_name")
 
         df = pd.DataFrame()
@@ -86,26 +88,25 @@ class MetricReader(object):
         ax = None
         cols = []
         for index, job in enumerate(job_ids):
-          tmp = self.get_records(job_id=job,
-                  experiment_name=experiment_names[index])
-          tmp = tmp[['cost', 'validation_accuracy', 'epoch', 'iteration']]
-          tmp.columns = ['Trainingskosten-%s' % titles[index],
-                        'Validierungskosten-%s' % titles[index],
-                        'epoch', 'iteration']
-          cols.append('Validierungskosten-%s' % titles[index])
-          num_per_epoch = len(tmp[tmp['epoch']==0])
-          max_epoche = tmp['epoch'].values.max()
-          tmp['Epochen'] = pd.Series(np.linspace(1./num_per_epoch,
-                                                 max_epoche, len(tmp)),
-                                     index=tmp.index)
-          df = df.append(tmp)
-          ax = df.plot(
-                  x='Epochen',
-                  y=['Trainingskosten-%s' % titles[index],
-                     'Validierungskosten-%s' % titles[index]],
-                  ax=ax, subplots=True, layout=(1,2),
-                  figsize=figsize,
-                  color=[colors[index], colors[index]])
+            if not exp_name: exp_name = experiment_names[index]
+            tmp = self.get_records(job_id=job, experiment_name=exp_name)
+            tmp = tmp[['cost', 'validation_accuracy', 'epoch', 'iteration']]
+            tmp.columns = ['Trainingskosten-%s' % titles[index],
+                            'Validierungskosten-%s' % titles[index],
+                            'epoch', 'iteration']
+            cols.append('Validierungskosten-%s' % titles[index])
+            num_per_epoch = len(tmp[tmp['epoch']==0])
+            max_epoche = tmp['epoch'].values.max()
+            tmp['Epochen'] = pd.Series(np.linspace(1./num_per_epoch,
+                                                     max_epoche, len(tmp)),
+                                         index=tmp.index)
+            df = df.append(tmp)
+            ax = df.plot(x='Epochen',
+                         y=['Trainingskosten-%s' % titles[index],
+                            'Validierungskosten-%s' % titles[index]],
+                         ax=ax, subplots=True, layout=(1,2),
+                         figsize=figsize,
+                         color=[colors[index], colors[index]])
         plt.subplots_adjust(wspace=0.3, hspace=0.3);
 
         ax[0].set_title('Trainingskosten')
