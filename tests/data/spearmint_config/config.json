@@ -5,7 +5,7 @@
 	      "address": "mongodb://localhost:27017"
     },
     "main-file" : "train.py",
-    "experiment-name" : "test-experiment",
+    "experiment-name" : "unittest-experiment",
     "likelihood" : "NOISELESS",
     "variables" : {
         "border" : {
