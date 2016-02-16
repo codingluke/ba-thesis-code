@@ -107,5 +107,6 @@ venv/
 
 upload_data.sh
 cleaned/
-src/model/
 submission/
+training/**/output/
+training/**/models/

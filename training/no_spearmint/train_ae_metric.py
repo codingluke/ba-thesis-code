@@ -75,7 +75,7 @@ net = Network([
         # tile_spacing=(2, 2)))
 # image.show()
 
-save_dir = "./model/%s_%d_" % (mr.experiment_name, mr.job_id)
+save_dir = "./models/%s_%d_" % (mr.experiment_name, mr.job_id)
 print "Savedir : " + save_dir
 
 print '...start pretraining'

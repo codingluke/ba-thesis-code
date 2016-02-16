@@ -46,7 +46,7 @@ for cl in [0.2]:
     mr = MetricRecorder(config_dir_path='./simple.json')
     mr.start()
     print "Job ID: %d" % mr.job_id
-    save_dir = "./model/%s_%d_" % (mr.experiment_name, mr.job_id)
+    save_dir = "./models/%s_%d_" % (mr.experiment_name, mr.job_id)
     print "Save Dir: " + save_dir
     print len(pretrain_data)
 
