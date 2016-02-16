@@ -1,10 +1,10 @@
 import unittest
+from itertools import izip
+from timeit import default_timer as timer
+
 import numpy as np
 import PIL.Image
-import pdb
 import os
-from timeit import default_timer as timer
-from itertools import izip
 
 from src.preprocessor import Processor, BatchProcessor
 import config
@@ -160,7 +160,7 @@ class TestBatchProcessor(unittest.TestCase):
             # if eq: break
         # self.assertEqual(count, 0)
 
-class TestPreprocessor(unittest.TestCase):
+class TestProcessor(unittest.TestCase):
 
     def setUp(self):
         self.preprocessor = Processor(

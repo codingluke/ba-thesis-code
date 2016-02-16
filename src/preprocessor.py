@@ -1,15 +1,23 @@
 #!/usr/bin/env python
+"""preprocessor.py
+
+Includes classes to preprocess Images (Processor) so that they can be
+used for learning a neural network as described in the paper "Enhancement and Cleaning of Handwritten Data by Using Neural Networks" http://dx.doi.org/10.1007/11492429_46.
+
+
+"""
 
 import numpy as np
 import os.path
-import PIL.Image
-import PIL.ImageOps
+import PIL.Image, PIL.ImageOps
 import glob
 
 from itertools import izip
 from numpy.lib.stride_tricks import as_strided as ast
 
 class BatchProcessor(object):
+    """A Python iteratior class, useing Processor classes for iterating
+    over multiple images, so that not all data has to be loaded in memory."""
 
     def __init__(self, random=False, slow=False,
                  X_dirpath=None, y_dirpath=None, border=3,
@@ -34,38 +42,50 @@ class BatchProcessor(object):
         self.rnd = rnd
 
     def __len__(self):
+        """Returns the size of available batches"""
+
         return int(self.dataset_size() / self.batchsize)
 
     def dataset_size(self):
+        """Returns the size of avaliable sub images from all images"""
+
         length = 0
         for p in self.preprocessors:
             length += p.length(slow=self.slow)
         return length
 
     def num_lost_datasets(self):
+        """Returns the amount of datasets lost, because of the batchsize."""
+
         return self.dataset_size() - self.size()
 
     def size(self):
+        """Returns the size of actual available sub images in all batches"""
+
         return len(self) * self.batchsize
 
     def __iter__(self):
+        """Iterator function for the class, returns itself"""
+
         return self
 
     def reset(self):
+        """Resets the iterator"""
+
         self.i = 0
         self.i_preprocessor = 0
         self.buffer = []
         if self.random: self.rnd.shuffle(self.preprocessors)
 
     def next(self):
-        """Gives back the next file data as numpy array. Raise StopIteration
+        """Returns the next batch as numpy array. Raise StopIteration
         at the end, so it can be used as iterator."""
         if self.i > len(self) - 1:
             self.reset()
             raise StopIteration
         else:
             self.i += 1
-            if self.random_mode == 'fully':
+            if self.random and self.random_mode == 'fully':
                 return self.next_fully_random()
             if len(self.buffer) <= self.batchsize:
                 for p in self.preprocessors[self.i_preprocessor:]:
@@ -80,6 +100,8 @@ class BatchProcessor(object):
                    np.asarray(y, dtype=self.dtype)
 
     def next_fully_random(self):
+        """Returns a batch of fully random picked sub images by randomly
+        chosen images."""
         high = len(self.preprocessors) - 1
         X, Y = [], []
         for i in xrange(self.batchsize):
@@ -93,6 +115,9 @@ class BatchProcessor(object):
                np.asarray(Y, dtype=self.dtype).reshape(self.batchsize, 1)
 
 class Processor(object):
+    """The Processor produces for every Pixel in the dirty image a
+    sub image including the pixel and a border of neighbours with
+    a variable size."""
 
     def __init__(self, X_imgpath=None, y_dirpath=None, border=3, rnd=None):
         assert X_imgpath != None and isinstance(X_imgpath, str)
@@ -105,13 +130,24 @@ class Processor(object):
         self.rnd = rnd
 
     def get_dataset(self, slow=False):
+        """Returns the dataset including the input (X) and target (y).
+        When the parameter `slow` is True, it uses the unoptimized, slower
+        implementation. It just exists for benchmark perpuses.
+        """
         if slow: return zip(self.get_X(), self.get_y())
         else: return zip(self.get_X_fast(), self.get_y_fast())
 
     def length(self, slow=False):
+        """Returns the length of the dataset, in other words, the
+        amount of pixels"""
+
         return self.pixels
 
     def load_images(self, X_imgpath, y_dirpath):
+        """Loads the X and y images. This means it calculates their sizes,
+        and converts them to numpy arrays. The X images is extended by the
+        border size, with black pixels."""
+
         name = os.path.basename(X_imgpath)
         X_img = PIL.Image.open(X_imgpath)
         pixels = X_img.size[0] * X_img.size[1]
@@ -127,6 +163,8 @@ class Processor(object):
         return X_img, y_img, pixels
 
     def get_random_patch(self):
+        """Returns a random subimage and its corresponding target pixel"""
+
         b = self.border
         height, width = self.X_img.shape
         _x = self.rnd.randint(b, height-b)
@@ -135,21 +173,24 @@ class Processor(object):
                self.y_img[_x-b,_y-b]
 
     def get_y(self):
+        """Returns all target pixels in sorted order"""
         height_range, width_range = self.__get_range(self.y_img.shape)
         return np.asarray([self.y_img[x, y].flatten()
                            for x in height_range
                            for y in width_range])
 
     def get_y_fast(self):
+        """Returns all target pixels in sorted order, fast"""
+
         return self.y_img.flatten().reshape(self.pixels, 1)
 
     def get_X(self):
         """Return an array of patch-images for each pixel of the image.
         The size of each patch is (self.border + 1, self.border + 1).
-        To get patch-images for the boarder pixels, the images is expanded.
         The patch-images are flattened and the pixel value is converted to
         percentage. 0 => black 1 => white.
         """
+
         b = self.border
         height_range, width_range = self.__get_range(self.X_img.shape,
                                                     border=b)
@@ -158,17 +199,27 @@ class Processor(object):
                 for y in width_range])
 
     def get_X_fast(self):
+        """Return an array of patch-images for each pixel of the image.
+        The size of each patch is (self.border + 1, self.border + 1).
+        The patch-images are flattened and the pixel value is converted to
+        percentage. 0 => black 1 => white, fast.
+        """
+
         size = 2*self.border+1
-        patches = sliding_window(self.X_img, (size, size),
-                                 (1, 1)).reshape(self.pixels, size**2)
-        return patches
+        return sliding_window(self.X_img, (size, size),
+                              (1, 1)).reshape(self.pixels, size**2)
 
     def set_border(self, border):
+        """Sets a new border. For this the images have to be reloaded."""
+
         self.border = border
         self.X_img, self.y_img, self.pixels = \
             self.load_images(self.X_imgpath, self.y_dirpath)
 
     def __get_range(self, shape, border=0):
+        """Returns the range for iterating over the pixels in the X images.
+        Its needed caus of the border. Borderpixels have to be ignored."""
+
         height, width = shape
         return xrange(border, height-border), \
                xrange(border, width-border)
