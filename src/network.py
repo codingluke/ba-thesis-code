@@ -125,24 +125,26 @@ class Network():
 
     def save(self, filename='model.pkl'):
         """Saves the model to a file a the given filename path"""
+
         f = open(filename, 'wb')
         cPickle.dump(self, f)
 
     def pretrain_autoencoders(self, tdata=None, mbs=200, eta=0.25, epochs=1,
                               metric_recorder=None, save_dir=None):
         """Detects all AutoencoderLayer's and trains them layerwise."""
-        aes = [layer
-               for layer in self.layers
-               if isinstance(layer, AutoencoderLayer)]
+
+        aes = [layer for layer in self.layers \
+                     if isinstance(layer, AutoencoderLayer)]
         for index, ae in enumerate(aes):
             ae.train(tdata=tdata, mbs=mbs,
-                     eta=eta, epochs=epochs, ff_layers=aes[:index],
+                     eta=eta, epochs=epochs, layers=aes[:index],
                      metric_recorder=metric_recorder, level=index)
         if save_dir: self.save(save_dir + "pretrained_model.pkl")
 
-    def rms_prop(self, grads, lr):
-        """given the gradients and the learning rate, calculates the update
-        rules by the rmsprop algorithm and gives them back."""
+    def rmsprop(self, grads, lr):
+        """Calculates and returns the update rules, given the
+        gradients and the learning rate by the rmsprop algorithm."""
+
         rho = 0.9
         epsilon = 1e-6
         updates = []
@@ -156,10 +158,11 @@ class Network():
             updates.append((p, T.cast(p - lr * g, theano.config.floatX)))
         return updates
 
-    def naive_sgd(self, grads=None, lr=None, momentum=0.0):
-        """given the gradients and the learning rate, calculates the update
-        rules by the stochastic gradient descent algorithm and gives them back.
-        Uses momentum when momentum is set."""
+    def sgd(self, grads=None, lr=None, momentum=0.0):
+        """Calculates and returns the update rules, given the
+        gradients and the learning rate by the stochastic gradient descent
+        algorithm optionally extended with the momentum rule."""
+
         if momentum == 0.0:
             return [(param, param-lr * grad)
                     for param, grad in zip(self.params, grads)]
@@ -175,11 +178,13 @@ class Network():
 
     def get_layer_string(self):
         """Returns a string representation of the layers for documentation."""
+
         return "-".join([layer.to_string() for layer in self.layers])
 
     def get_layer_dropout_string(self):
         """Returns a sring representation of the dropout configuration
         for documentation"""
+
         return ", ".join([str(layer.p_dropout) for layer in self.layers])
 
     def train(self, tdata=None, vdata=None, epochs=10, mbs=100, eta=0.025,
@@ -269,9 +274,9 @@ class Network():
         lr = T.scalar()
         updates = []
         if algorithm == 'rmsprop':
-            updates = self.rms_prop(grads, lr)
+            updates = self.rmsprop(grads, lr)
         elif algorithm == 'sgd':
-            updates = self.naive_sgd(grads, lr, momentum=momentum)
+            updates = self.sgd(grads, lr, momentum=momentum)
 
         # define theano functions to train a mini-batch, and to compute the
         # accuracy for validation mini-batches.
@@ -497,9 +502,9 @@ class AutoencoderLayer(Layer):
 
         return (cost, updates)
 
-    def train(self, tdata=None, ff_layers=[], metric_recorder=None,
+    def train(self, tdata=None, layers=[], metric_recorder=None,
               mbs=200, eta=0.25, epochs=1, level=0):
-        """Train the layer
+        """Train all Autoencderlayer's one by one, forward.
 
         Keyword arguments:
 
@@ -507,8 +512,7 @@ class AutoencoderLayer(Layer):
         epochs    -- number of epochs to train
         mbs       -- Mini-Batch-Size for training
         eta       -- learning rate max
-        ff_layers -- fastforward layers form autoencoders before,
-                     to preprocess the data
+        layers    -- List of forgoing AutoencoderLayer's to preprocess the data
         level     -- indicator of which layer is trained.
         metric_recorder -- MetricRecorder instance to record the training
         """
@@ -521,7 +525,7 @@ class AutoencoderLayer(Layer):
         # Prepare Theano shared variables with the shape and type of
         # The train, valid batches.
         train_x_zeros, _ = tdata.next()
-        for l in ff_layers: train_x_zeros = l.forward(train_x_zeros)
+        for l in layers: train_x_zeros = l.forward(train_x_zeros)
         training_x = tshared(train_x_zeros)
         tdata.reset()
 
@@ -540,7 +544,7 @@ class AutoencoderLayer(Layer):
         for epoch in xrange(epochs):
             c = []
             for train_x, _ in tdata:
-                for l in ff_layers: train_x = l.forward(train_x)
+                for l in layers: train_x = l.forward(train_x)
                 training_x.set_value(train_x, borrow=True)
                 for batch_index in xrange(n_train_batches):
                     c.append(train_mb(batch_index))
