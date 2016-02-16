@@ -36,18 +36,18 @@ class BatchImgProcessor(object):
         self.rnd = rnd
 
     def __len__(self):
-        return int(self.full_lenght() / self.batchsize)
+        return int(self.dataset_size() / self.batchsize)
 
-    def full_lenght(self):
+    def dataset_size(self):
         length = 0
         for p in self.preprocessors:
             length += p.length(slow=self.slow)
         return length
 
     def num_lost_datasets(self):
-        return self.full_lenght() - self.actual_full_length()
+        return self.dataset_size() - self.size()
 
-    def actual_full_length(self):
+    def size(self):
         return len(self) * self.batchsize
 
     def __iter__(self):

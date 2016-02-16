@@ -232,8 +232,8 @@ class Network():
           'validation_frequency' : validation_frequency,
           'dropouts' : self.get_layer_dropout_string(),
           'layers' : self.get_layer_string(),
-          'training_data' : tdata.full_lenght(),
-          'validation_data' : vdata.full_lenght(),
+          'training_data' : tdata.size(),
+          'validation_data' : vdata.size(),
           'algorithm' : algorithm
         }
 
@@ -290,7 +290,7 @@ class Network():
         # set start meta variables
         best_valid_acc = 1.0
         done_looping = False # for early stopping
-        val_per_epochs = tdata.actual_full_length() / mbs
+        val_per_epochs = tdata.size() / mbs
         validation_frequency = int(val_per_epochs/ validation_frequency)
         patience = validation_frequency * 4
 

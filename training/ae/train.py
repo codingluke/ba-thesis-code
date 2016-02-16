@@ -74,8 +74,8 @@ def train(job_id, params):
         random=True, random_mode='fully', rnd=rnd,
         dtype=theano.config.floatX)
 
-    C['training_size'] = training_data.actual_full_length()
-    C['validation_size'] = validation_data.actual_full_length()
+    C['training_size'] = training_data.size()
+    C['validation_size'] = validation_data.size()
     print "Training size: %d" % C['training_size']
     print "Validation size: %d" % C['validation_size']
 
