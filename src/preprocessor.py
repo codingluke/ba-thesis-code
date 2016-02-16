@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 """preprocessor.py
-
-Includes classes to preprocess Images (Processor) so that they can be
-used for learning a neural network as described in the paper "Enhancement and Cleaning of Handwritten Data by Using Neural Networks" http://dx.doi.org/10.1007/11492429_46.
-
-
+Includes classes to preprocess images (Processor) and iterate over them (BatchProcessor), so that they can be used to train neural networks
+described in the paper "Enhancement and Cleaning of Handwritten Data by
+Using Neural Networks" http://dx.doi.org/10.1007/11492429_46.
 """
 
 import numpy as np
@@ -16,22 +14,38 @@ from itertools import izip
 from numpy.lib.stride_tricks import as_strided as ast
 
 class BatchProcessor(object):
-    """A Python iteratior class, useing Processor classes for iterating
-    over multiple images, so that not all data has to be loaded in memory."""
 
-    def __init__(self, random=False, slow=False,
-                 X_dirpath=None, y_dirpath=None, border=3,
-                 limit=None, batchsize=None,
+    def __init__(self, random=False, slow=False, X_dirpath=None,
+                 y_dirpath=None, border=3, limit=None, batchsize=None,
                  dtype='float32', random_mode='normal', rnd=None):
+        """A Python iteratior class, uses Processor classes for iterating
+        over multiple images, so that not all data has to be loaded in memory.
+
+        Keyword arguments:
+
+        X_dirpath    -- Path to the dirty images.
+        y_dirpath    -- Path to the clean images.
+        border       -- Size of the border with neighbour pixels. (3)
+        limit        -- Limit images to load (None)
+        batchisize   -- Size of a batch for one iteration.
+        dtype        -- numpy data type for returning values. ('float32')
+        random       -- When True, the dataset is shuffled after a
+                        completed iteration. (False)
+        random_mode  -- When set to 'fully', it uses the fully random
+                        mode ('normal')
+        slow         -- When True, the dataset is generated unoptimized, not
+                        recommended. (False)
+        rnd          -- Numpy RandomState (None)
+        """
+
         self.X_dirpath = X_dirpath
         self.y_dirpath = y_dirpath
         self.border = border
         self.batchsize = batchsize
         self.limit = limit
         self.dtype = dtype
-        self.preprocessors = [Processor(X_imgpath=img,
-                                             y_dirpath=y_dirpath,
-                                             border=border, rnd=rnd)
+        self.preprocessors = [Processor(X_imgpath=img, y_dirpath=y_dirpath,
+                                        border=border, rnd=rnd)
                              for img in glob.glob(X_dirpath)[:limit]]
         self.slow = slow
         self.random = random
