@@ -1,25 +1,34 @@
 # coding: utf-8
 
+# default libs
 import numpy as np
-import PIL.Image
-import theano
-from utils import tile_raster_images
 from timeit import default_timer as timer
 
-from network import Network, FullyConnectedLayer, \
-                    tanh, ReLU, AutoencoderLayer
+# add own libs to path
+lib_path = os.path.abspath(os.path.join('../../src'))
+sys.path.append(lib_path)
+
+# third-party libs
+from utils import tile_raster_images
+import PIL.Image
+import theano
+
+# own libs
+from network import Network, FullyConnectedLayer, AutoencoderLayer
 from preprocessor import BatchImgProcessor
 from engine import Cleaner
 from metric import MetricRecorder
 
 rnd = np.random.RandomState()
+
+mr = MetricRecorder(config_dir_path='./sae.json')
 border = 2
 n_in = (2*border+1)**2
 mbs = 500
 
 pretrain_data = BatchImgProcessor(
-    X_dirpath='../../data/onetext_pretrain_small/*',
-    y_dirpath='../../data/onetext_pretrain_small/',
+    X_dirpath='../../../data/onetext_pretrain_small/*',
+    y_dirpath='../../../data/onetext_pretrain_small/',
     batchsize=500000,
     border=border,
     limit=None,
@@ -28,8 +37,8 @@ pretrain_data = BatchImgProcessor(
     random=True, rnd=rnd)
 
 training_data = BatchImgProcessor(
-    X_dirpath='../../data/onetext_train_small/*',
-    y_dirpath='../../data/train_cleaned/',
+    X_dirpath='../../../data/onetext_train_small/*',
+    y_dirpath='../../../data/train_cleaned/',
     batchsize=1000000,
     border=border,
     limit=None,
@@ -38,20 +47,19 @@ training_data = BatchImgProcessor(
     random=True, rnd=rnd)
 
 validation_data = BatchImgProcessor(
-    X_dirpath='../../data/onetext_valid_small/*',
-    y_dirpath='../../data/train_cleaned/',
+    X_dirpath='../../../data/onetext_valid_small/*',
+    y_dirpath='../../../data/train_cleaned/',
     batchsize=1000000,
     border=border,
     limit=None,
     dtype=theano.config.floatX,
     random=False, rnd=rnd)
 
-mr = MetricRecorder(config_dir_path='./sae.json')
-mr.start()
-
 print "Pretrain size: %d" % len(training_data)
 print "Training size: %d" % len(training_data)
 print "Validation size: %d" % len(validation_data)
+
+mr.start()
 
 net = Network([
         AutoencoderLayer(n_in=n_in, n_hidden=190, corruption_level=0.14,

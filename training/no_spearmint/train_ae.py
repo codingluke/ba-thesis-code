@@ -1,12 +1,19 @@
 # coding: utf-8
 
+# default libs
 import numpy as np
 import PIL.Image
 import cPickle
 import theano
+import sys, os
 from timeit import default_timer as timer
 
-from network import Network, FullyConnectedLayer, tanh, ReLU, AutoencoderLayer
+# add own libs to path
+lib_path = os.path.abspath(os.path.join('../../src'))
+sys.path.append(lib_path)
+
+# own libs
+from network import Network, FullyConnectedLayer, AutoencoderLayer
 from preprocessor import BatchImgProcessor
 from metric import MetricRecorder
 
@@ -14,22 +21,22 @@ rnd = np.random.RandomState()
 border = 2
 
 training_data = BatchImgProcessor(
-    X_dirpath='../../data/onetext_train_small/*',
-    y_dirpath='../../data/train_cleaned/',
+    X_dirpath='../../../data/onetext_train_small/*',
+    y_dirpath='../../../data/train_cleaned/',
     batchsize=2000000, border=border, limit=None,
     random=True, random_mode='fully',
     dtype=theano.config.floatX, rnd=rnd)
 
 validation_data = BatchImgProcessor(
-    X_dirpath='../../data/onetext_valid_small/*',
-    y_dirpath='../../data/train_cleaned/',
+    X_dirpath='../../../data/onetext_valid_small/*',
+    y_dirpath='../../../data/train_cleaned/',
     batchsize=2000000, border=border, limit=None,
     random=False, rnd=rnd,
     dtype=theano.config.floatX)
 
 pretrain_data = BatchImgProcessor(
-    X_dirpath='../../data/onetext_pretrain_small/*',
-    y_dirpath='../../data/train_cleaned/',
+    X_dirpath='../../../data/onetext_pretrain_small/*',
+    y_dirpath='../../../data/train_cleaned/',
     batchsize=50000, border=border, limit=None,
     random=True, random_mode='fully', rnd=rnd,
     dtype=theano.config.floatX)

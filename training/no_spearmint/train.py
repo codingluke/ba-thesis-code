@@ -1,10 +1,17 @@
 # coding: utf-8
 
+# default libs
 import numpy as np
 import theano
-
+import sys, os
 from timeit import default_timer as timer
-from network import Network, FullyConnectedLayer, tanh, ReLU
+
+# add own libs to path
+lib_path = os.path.abspath(os.path.join('../../src'))
+sys.path.append(lib_path)
+
+# own libs
+from network import Network, FullyConnectedLayer
 from preprocessor import BatchImgProcessor
 from metric import MetricRecorder
 
@@ -16,21 +23,21 @@ mr.start()
 border = 2
 
 training_data = BatchImgProcessor(
-    X_dirpath='../../data/onetext_train_small/*',
-    y_dirpath='../../data/train_cleaned/',
+    X_dirpath='../../../data/onetext_train_small/*',
+    y_dirpath='../../../data/train_cleaned/',
     batchsize=2000000, border=border, limit=None,
     random=True, random_mode='fully',
     dtype=theano.config.floatX, rnd=rnd)
 
 validation_data = BatchImgProcessor(
-    X_dirpath='../../data/onetext_valid_small/*',
-    y_dirpath='../../data/train_cleaned/',
+    X_dirpath='../../../data/onetext_valid_small/*',
+    y_dirpath='../../../data/train_cleaned/',
     batchsize=2000000, border=border, limit=None,
     random=False, rnd=rnd,
     dtype=theano.config.floatX)
 
 print "Job ID: %d" % mr.job_id
-save_dir = "./model/%s_%d_" % (mr.experiment_name, mr.job_id)
+save_dir = "./models/%s_%d_" % (mr.experiment_name, mr.job_id)
 print "Save Dir: " + save_dir
 
 start = timer()
