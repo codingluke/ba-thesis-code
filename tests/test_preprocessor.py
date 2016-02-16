@@ -6,7 +6,7 @@ import os
 from timeit import default_timer as timer
 from itertools import izip
 
-from src.preprocessor import ImgPreprocessor, BatchImgProcessor, TrainRange
+from src.preprocessor import ImgPreprocessor, BatchImgProcessor
 import config
 
 rnd = np.random.RandomState(232342)
@@ -117,21 +117,6 @@ class TestBatchImgProcessor(unittest.TestCase):
         self.assertNotEqual(X[0][center_index], X3[0][center_index])
         self.assertNotEqual(X[-1][center_index], X3[-1][center_index])
 
-    def test_train_range_intersec(self):
-        valid_range = [x for x in xrange(3,258+6-3,8)]
-        train_range = [x for x in TrainRange(3,258+6-3,8)]
-        intersec = np.intersect1d(valid_range, train_range)
-        total_len = len(valid_range) + len(train_range)
-        self.assertEqual(len(intersec), 0)
-        self.assertEqual(total_len, 258)
-
-        valid_range = [x for x in xrange(0,258,7)]
-        train_range = [x for x in TrainRange(0,258,7)]
-        intersec = np.intersect1d(valid_range, train_range)
-        total_len = len(valid_range) + len(train_range)
-        self.assertEqual(len(intersec), 0)
-        self.assertEqual(total_len, 258)
-
     def test_batch_lengths(self):
         validl = len(self.valid_batch)
         validl2 = len([x for x in self.valid_batch])
@@ -181,14 +166,13 @@ class TestPreprocessor(unittest.TestCase):
         self.preprocessor = ImgPreprocessor(
             X_imgpath='./tests/data/valid/noise.png',
             y_dirpath='./tests/data/test/',
-            border=1,
-            train_stepover=8, rnd=rnd)
+            border=1, rnd=rnd)
 
     def test_sliding_window(self):
-        x1 = self.preprocessor._get_X_fast()
-        x2 = self.preprocessor._get_X()
-        y1 = self.preprocessor._get_y_fast()
-        y2 = self.preprocessor._get_y()
+        x1 = self.preprocessor.get_X_fast()
+        x2 = self.preprocessor.get_X()
+        y1 = self.preprocessor.get_y_fast()
+        y2 = self.preprocessor.get_y()
         pass
 
     def test_get_random_patch(self):
@@ -206,7 +190,7 @@ class TestPreprocessor(unittest.TestCase):
         self.assertNotEqual(patch2[center_index], patch3[center_index])
 
     def test_fully_random_consistency(self):
-        self.preprocessor._load_images('./tests/data/train/gradient.png',
+        self.preprocessor.load_images('./tests/data/train/gradient.png',
             './tests/data/train/')
         x, y = self.preprocessor.get_random_patch()
         x = x.flatten()
@@ -214,10 +198,10 @@ class TestPreprocessor(unittest.TestCase):
         self.assertEqual(x[center_index], y)
 
     def test_get_fast_x_consistency(self):
-        self.preprocessor._load_images('./tests/data/train/gradient.png',
+        self.preprocessor.load_images('./tests/data/train/gradient.png',
             './tests/data/train/')
-        x = self.preprocessor._get_X_fast()[:2]
-        y = self.preprocessor._get_y_fast()[:2]
+        x = self.preprocessor.get_X_fast()[:2]
+        y = self.preprocessor.get_y_fast()[:2]
         center_index = (len(x[0]) - 1) / 2
         self.assertEqual(x[0][center_index], y[0][0])
         self.assertEqual(x[1][center_index], y[1][0])

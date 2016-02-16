@@ -67,7 +67,7 @@ class Cleaner(object):
 
         id = os.path.basename(img_path)[:-len('.png')]
         p = ImgPreprocessor(X_imgpath=img_path, border=self.border)
-        patches = p._get_X_fast()
+        patches = p.get_X_fast()
         y = self.net.predict(patches)
         y2 = np.vstack(np.array(y).flatten())
         w, h = p.X_img.shape

@@ -14,7 +14,6 @@ from network import Network, ConvPoolLayer, FullyConnectedLayer, \
                     tanh, ReLU
 from preprocessor import BatchImgProcessor
 
-
 border=2
 n_hidden_layer=80
 eta=0.01
@@ -24,10 +23,7 @@ mini_batch_size = 500
 BatchProcessor = BatchImgProcessor.load(
     X_dirpath='../../../data/train/*',
     y_dirpath='../../../data/train_cleaned/',
-    batchsize=50000,
-    border=border,
-    limit=5,
-    train_stepover=8,
+    batchsize=50000, border=border, limit=5,
     dtype=theano.config.floatX)
 
 training_data = BatchProcessor(modus='train', random=True)

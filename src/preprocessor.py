@@ -13,18 +13,16 @@ class BatchImgProcessor(object):
 
     def __init__(self, random=False, slow=False,
                  X_dirpath=None, y_dirpath=None, border=3,
-                 train_stepover=8, limit=None, batchsize=None,
+                 limit=None, batchsize=None,
                  dtype='float32', random_mode='normal', rnd=None):
         self.X_dirpath = X_dirpath
         self.y_dirpath = y_dirpath
         self.border = border
-        self.train_stepover = train_stepover
         self.batchsize = batchsize
         self.limit = limit
         self.dtype = dtype
         self.preprocessors = [ImgPreprocessor(X_imgpath=img,
                                              y_dirpath=y_dirpath,
-                                             train_stepover=train_stepover,
                                              border=border, rnd=rnd)
                              for img in glob.glob(X_dirpath)[:limit]]
         self.slow = slow
@@ -96,27 +94,24 @@ class BatchImgProcessor(object):
 
 class ImgPreprocessor(object):
 
-    def __init__(self, X_imgpath=None, y_dirpath=None, border=3,
-                 train_stepover=8, rnd=None):
+    def __init__(self, X_imgpath=None, y_dirpath=None, border=3, rnd=None):
         assert X_imgpath != None and isinstance(X_imgpath, str)
-        # assert y_dirpath != None and isinstance(y_dirpath, str)
 
         self.border = border
         self.X_img, self.y_img, self.pixels = \
-            self._load_images(X_imgpath, y_dirpath)
+            self.load_images(X_imgpath, y_dirpath)
         self.X_imgpath = X_imgpath
         self.y_dirpath = y_dirpath
-        self.stepover = train_stepover
         self.rnd = rnd
 
     def get_dataset(self, slow=False):
-        if slow: return zip(self._get_X(), self._get_y())
-        else: return zip(self._get_X_fast(), self._get_y_fast())
+        if slow: return zip(self.get_X(), self.get_y())
+        else: return zip(self.get_X_fast(), self.get_y_fast())
 
     def length(self, slow=False):
         return self.pixels
 
-    def _load_images(self, X_imgpath, y_dirpath):
+    def load_images(self, X_imgpath, y_dirpath):
         name = os.path.basename(X_imgpath)
         X_img = PIL.Image.open(X_imgpath)
         pixels = X_img.size[0] * X_img.size[1]
@@ -139,16 +134,16 @@ class ImgPreprocessor(object):
         return self.X_img[_x-b:_x+b+1, _y-b:_y+b+1], \
                self.y_img[_x-b,_y-b]
 
-    def _get_y(self):
-        height_range, width_range = self._get_range(self.y_img.shape)
+    def get_y(self):
+        height_range, width_range = self.__get_range(self.y_img.shape)
         return np.asarray([self.y_img[x, y].flatten()
                            for x in height_range
                            for y in width_range])
 
-    def _get_y_fast(self):
+    def get_y_fast(self):
         return self.y_img.flatten().reshape(self.pixels, 1)
 
-    def _get_X(self):
+    def get_X(self):
         """Return an array of patch-images for each pixel of the image.
         The size of each patch is (self.border + 1, self.border + 1).
         To get patch-images for the boarder pixels, the images is expanded.
@@ -156,13 +151,13 @@ class ImgPreprocessor(object):
         percentage. 0 => black 1 => white.
         """
         b = self.border
-        height_range, width_range = self._get_range(self.X_img.shape,
+        height_range, width_range = self.__get_range(self.X_img.shape,
                                                     border=b)
         return np.asarray([self.X_img[x-b:x+b+1, y-b:y+b+1].flatten()
                 for x in height_range
                 for y in width_range])
 
-    def _get_X_fast(self):
+    def get_X_fast(self):
         size = 2*self.border+1
         patches = sliding_window(self.X_img, (size, size),
                                  (1, 1)).reshape(self.pixels, size**2)
@@ -171,34 +166,12 @@ class ImgPreprocessor(object):
     def set_border(self, border):
         self.border = border
         self.X_img, self.y_img, self.pixels = \
-            self._load_images(self.X_imgpath, self.y_dirpath)
+            self.load_images(self.X_imgpath, self.y_dirpath)
 
-    def _get_range(self, shape, border=0):
+    def __get_range(self, shape, border=0):
         height, width = shape
         return xrange(border, height-border), \
                xrange(border, width-border)
-
-class TrainRange(object):
-
-    def __init__(self, start, end, stepover=None):
-        self.start = start
-        self.end = end
-        self.stepover = stepover
-        self.act = start
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        if self.act >= self.end:
-            self.act = self.start
-            raise StopIteration
-        else:
-            self.act += 1
-            if self.stepover and \
-               (((self.act - 1) - self.start) % self.stepover) == 0:
-                self.act += 1
-            return self.act - 1
 
 
 def sliding_window(a, ws, ss=None):
