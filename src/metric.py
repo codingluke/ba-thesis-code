@@ -79,6 +79,7 @@ class MetricReader(object):
     def compair_plot(self, job_ids=[], colors=['r', 'g', 'b'],
                      titles=[1, 2, 3], figsize=(9,2.4), xytext=None,
                      experiment_names=[]):
+        exp_name = None
         if not experiment_names: exp_name = self.experiment_name
         elif experiment_names and len(experiment_names) != len(job_ids):
             raise Exception("all job_ids must have an experiment_name")
@@ -88,8 +89,11 @@ class MetricReader(object):
         ax = None
         cols = []
         for index, job in enumerate(job_ids):
-            if not exp_name: exp_name = experiment_names[index]
-            tmp = self.get_records(job_id=job, experiment_name=exp_name)
+            if exp_name:
+                tmp = self.get_records(job_id=job, experiment_name=exp_name)
+            else:
+                tmp = self.get_records(job_id=job, experiment_name=
+                        experiment_names[index])
             tmp = tmp[['cost', 'validation_accuracy', 'epoch', 'iteration']]
             tmp.columns = ['Trainingskosten-%s' % titles[index],
                             'Validierungskosten-%s' % titles[index],
