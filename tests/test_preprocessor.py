@@ -7,7 +7,6 @@ from timeit import default_timer as timer
 from itertools import izip
 
 from src.preprocessor import ImgPreprocessor, BatchImgProcessor, TrainRange
-from src.load_data import DataIter
 import config
 
 rnd = np.random.RandomState(232342)

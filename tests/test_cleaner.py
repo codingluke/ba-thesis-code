@@ -41,9 +41,6 @@ class TestCleaner(unittest.TestCase):
         e = Cleaner('./tests/data/models/13_72000_model.pkl')
         e.clean_and_show(img)
 
-        e = Cleaner('./src/model/ae2_90000_model.pkl')
-        e.clean_and_show(img)
-
         e = Cleaner('./tests/data/models/ae3_213750_model.pkl')
         e.clean_and_show(img)
         pass
