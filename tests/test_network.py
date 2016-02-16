@@ -13,7 +13,7 @@ lib_path = os.path.abspath(os.path.join('src'))
 sys.path.append(lib_path)
 
 from network import Network, FullyConnectedLayer, AutoencoderLayer
-from preprocessor import BatchImgProcessor
+from preprocessor import BatchProcessor
 import config
 
 rnd = np.random.RandomState(2348923)
@@ -23,7 +23,7 @@ class TestNetwork(unittest.TestCase):
     def setUp(self):
         border = 2
         self.n_in = (2*border+1)**2
-        self.pretrain = BatchImgProcessor(
+        self.pretrain = BatchProcessor(
           X_dirpath=config.data_dir_path + 'train_cleaned/*',
           y_dirpath=config.data_dir_path + 'train_cleaned/',
           batchsize=5000,
@@ -50,14 +50,14 @@ class TestNetwork(unittest.TestCase):
         border = 2
         mbs = 500
         n_in = (2*border+1)**2
-        tdata = BatchImgProcessor(
+        tdata = BatchProcessor(
           X_dirpath=config.data_dir_path + 'train/*',
           y_dirpath=config.data_dir_path + 'train_cleaned/',
           batchsize=5000, border=border,
           limit=1, dtype=theano.config.floatX,
           random=True, random_mode='fully',
           rnd=rnd)
-        vdata = BatchImgProcessor(
+        vdata = BatchProcessor(
           X_dirpath=config.data_dir_path + 'train/*',
           y_dirpath=config.data_dir_path + 'train_cleaned/',
           batchsize=5000, border=border,

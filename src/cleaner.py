@@ -18,7 +18,7 @@ import PIL
 
 # own libraries
 from network import Network
-from preprocessor import ImgPreprocessor
+from preprocessor import Processor
 
 class BatchCleaner(object):
 
@@ -66,7 +66,7 @@ class Cleaner(object):
         the dirty image"""
 
         id = os.path.basename(img_path)[:-len('.png')]
-        p = ImgPreprocessor(X_imgpath=img_path, border=self.border)
+        p = Processor(X_imgpath=img_path, border=self.border)
         patches = p.get_X_fast()
         y = self.net.predict(patches)
         y2 = np.vstack(np.array(y).flatten())

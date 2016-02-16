@@ -12,13 +12,13 @@ sys.path.append(lib_path)
 
 # own libs
 from network import Network, FullyConnectedLayer, AutoencoderLayer
-from preprocessor import BatchImgProcessor
+from preprocessor import BatchProcessor
 from metric import MetricRecorder
 
 border = 2
 mr = MetricRecorder(config_dir_path='./sea.json')
 
-pretrain_data = BatchImgProcessor(
+pretrain_data = BatchProcessor(
     X_dirpath='../../../data/train_cleaned/*',
     y_dirpath='../../../data/train_cleaned/',
     batchsize=500000,
@@ -27,7 +27,7 @@ pretrain_data = BatchImgProcessor(
     random=True, random_mode='fully',
     dtype=theano.config.floatX)
 
-training_data = BatchImgProcessor(
+training_data = BatchProcessor(
     X_dirpath='../../../data/train/*',
     y_dirpath='../../../data/train_cleaned/',
     batchsize=500000,
@@ -35,7 +35,7 @@ training_data = BatchImgProcessor(
     random=True, random_mode='fully',
     dtype=theano.config.floatX)
 
-validation_data = BatchImgProcessor(
+validation_data = BatchProcessor(
     X_dirpath='../../../data/valid/*',
     y_dirpath='../../../data/train_cleaned/',
     batchsize=500000,
@@ -60,7 +60,7 @@ net = Network([
 
 print '...start pretraining'
 net.pretrain_autoencoders(tdata=pretrain_data,
-                          mbs=mbs, metric_recorder=mr, 
+                          mbs=mbs, metric_recorder=mr,
                           save_dir='./models/sea_test_pretrain_',
                           eta=0.01, epochs=10)
 

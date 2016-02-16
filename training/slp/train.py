@@ -11,12 +11,12 @@ sys.path.append(lib_path)
 
 from network import Network, ConvPoolLayer, FullyConnectedLayer, \
                     tanh, ReLU
-from preprocessor import BatchImgProcessor
+from preprocessor import BatchProcessor
 
 def train(job_id, border, n_hidden_layer, eta, lmbda):
     mbs = 500
     print theano.config.floatX
-    training_data = BatchImgProcessor(
+    training_data = BatchProcessor(
         X_dirpath='../../../data/train/*',
         y_dirpath='../../../data/train_cleaned/',
         batchsize=50000,
@@ -24,7 +24,7 @@ def train(job_id, border, n_hidden_layer, eta, lmbda):
         random=True, random_mode='fully',
         limit=5,
         dtype=theano.config.floatX)
-    validation_data = BatchImgProcessor(
+    validation_data = BatchProcessor(
         X_dirpath='../../../data/valid/*',
         y_dirpath='../../../data/train_cleaned/',
         batchsize=50000,

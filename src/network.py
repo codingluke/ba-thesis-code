@@ -189,8 +189,8 @@ class Network():
 
         Keyword arguments:
 
-        tdata     -- train data iterator (BatchImgProcessor)
-        vdata     -- validation data iterator (BatchImgProcessor)
+        tdata     -- train data iterator (preprocessor.BatchProcessor)
+        vdata     -- validation data iterator (preprocessor.BatchProcessor)
         epochs    -- number of epochs to train
         mbs       -- Mini-Batch-Size for training
         eta       -- learning rate max
@@ -501,7 +501,7 @@ class AutoencoderLayer(Layer):
 
         Keyword arguments:
 
-        tdata     -- train data iterator (BatchImgProcessor)
+        tdata     -- train data iterator (preprocessor.BatchProcessor)
         epochs    -- number of epochs to train
         mbs       -- Mini-Batch-Size for training
         eta       -- learning rate max

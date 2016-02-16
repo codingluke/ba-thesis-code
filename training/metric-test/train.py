@@ -11,7 +11,7 @@ sys.path.append(lib_path)
 
 from network import Network, ConvPoolLayer, FullyConnectedLayer, \
                     tanh, ReLU
-from preprocessor import BatchImgProcessor
+from preprocessor import BatchProcessor
 from metric import MetricRecorder
 
 def train(job_id, border, n_hidden_layer, eta):
@@ -34,7 +34,7 @@ def train(job_id, border, n_hidden_layer, eta):
         'algorithm' : 'RMSProp'
     }
 
-    training_data = BatchImgProcessor(
+    training_data = BatchProcessor(
         X_dirpath='../../../data/train/*',
         y_dirpath='../../../data/train_cleaned/',
         batchsize=C['batchsize'],
@@ -42,7 +42,7 @@ def train(job_id, border, n_hidden_layer, eta):
         limit=C['limit'],
         dtype=theano.config.floatX)
 
-    validation_data = BatchImgProcessor.load(
+    validation_data = BatchProcessor(
         X_dirpath='../../../data/valid/*',
         y_dirpath='../../../data/train_cleaned/',
         batchsize=C['batchsize'],

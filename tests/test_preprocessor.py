@@ -6,15 +6,15 @@ import os
 from timeit import default_timer as timer
 from itertools import izip
 
-from src.preprocessor import ImgPreprocessor, BatchImgProcessor
+from src.preprocessor import Processor, BatchProcessor
 import config
 
 rnd = np.random.RandomState(232342)
 
-class TestBatchImgProcessor(unittest.TestCase):
+class TestBatchProcessor(unittest.TestCase):
 
     def setUp(self):
-        self.train_batch = BatchImgProcessor(
+        self.train_batch = BatchProcessor(
             X_dirpath='./tests/data/train/*',
             y_dirpath='./tests/data/test/',
             batchsize=100,
@@ -22,7 +22,7 @@ class TestBatchImgProcessor(unittest.TestCase):
             limit=None,
             rnd=rnd)
 
-        self.valid_batch = BatchImgProcessor(
+        self.valid_batch = BatchProcessor(
             X_dirpath='../tests/data/valid/*',
             y_dirpath='./tests/data/test/',
             batchsize=100,
@@ -42,7 +42,7 @@ class TestBatchImgProcessor(unittest.TestCase):
 
     @unittest.skipUnless(config.slow, 'slow test')
     def test_bench(self):
-        bp = BatchImgProcessor(
+        bp = BatchProcessor(
             X_dirpath='../data/train/*',
             y_dirpath='../data/train_cleaned/',
             batchsize=4000000,
@@ -163,7 +163,7 @@ class TestBatchImgProcessor(unittest.TestCase):
 class TestPreprocessor(unittest.TestCase):
 
     def setUp(self):
-        self.preprocessor = ImgPreprocessor(
+        self.preprocessor = Processor(
             X_imgpath='./tests/data/valid/noise.png',
             y_dirpath='./tests/data/test/',
             border=1, rnd=rnd)

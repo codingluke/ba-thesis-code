@@ -10,7 +10,7 @@ lib_path = os.path.abspath(os.path.join('..', '..', 'src'))
 sys.path.append(lib_path)
 
 from network import Network, FullyConnectedLayer
-from preprocessor import BatchImgProcessor
+from preprocessor import BatchProcessor
 from metric import MetricRecorder
 
 rnd = np.random.RandomState()
@@ -45,7 +45,7 @@ def train(job_id, params):
         'mini_batch_size': 500
     }
 
-    training_data = BatchImgProcessor(
+    training_data = BatchProcessor(
         X_dirpath=C['X_dirpath'],
         y_dirpath=C['y_dirpath'],
         batchsize=C['batchsize'],
@@ -56,7 +56,7 @@ def train(job_id, params):
         dtype=theano.config.floatX,
         rnd=rnd)
 
-    validation_data = BatchImgProcessor(
+    validation_data = BatchProcessor(
         X_dirpath=C['X_valid_dirpath'],
         y_dirpath=C['y_dirpath'],
         batchsize=C['batchsize'],

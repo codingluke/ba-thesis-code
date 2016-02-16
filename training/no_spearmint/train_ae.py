@@ -14,27 +14,27 @@ sys.path.append(lib_path)
 
 # own libs
 from network import Network, FullyConnectedLayer, AutoencoderLayer
-from preprocessor import BatchImgProcessor
+from preprocessor import BatchProcessor
 from metric import MetricRecorder
 
 rnd = np.random.RandomState()
 border = 2
 
-training_data = BatchImgProcessor(
+training_data = BatchProcessor(
     X_dirpath='../../../data/onetext_train_small/*',
     y_dirpath='../../../data/train_cleaned/',
     batchsize=2000000, border=border, limit=None,
     random=True, random_mode='fully',
     dtype=theano.config.floatX, rnd=rnd)
 
-validation_data = BatchImgProcessor(
+validation_data = BatchProcessor(
     X_dirpath='../../../data/onetext_valid_small/*',
     y_dirpath='../../../data/train_cleaned/',
     batchsize=2000000, border=border, limit=None,
     random=False, rnd=rnd,
     dtype=theano.config.floatX)
 
-pretrain_data = BatchImgProcessor(
+pretrain_data = BatchProcessor(
     X_dirpath='../../../data/onetext_pretrain_small/*',
     y_dirpath='../../../data/train_cleaned/',
     batchsize=50000, border=border, limit=None,

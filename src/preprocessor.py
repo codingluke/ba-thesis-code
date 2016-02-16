@@ -9,7 +9,7 @@ import glob
 from itertools import izip
 from numpy.lib.stride_tricks import as_strided as ast
 
-class BatchImgProcessor(object):
+class BatchProcessor(object):
 
     def __init__(self, random=False, slow=False,
                  X_dirpath=None, y_dirpath=None, border=3,
@@ -21,7 +21,7 @@ class BatchImgProcessor(object):
         self.batchsize = batchsize
         self.limit = limit
         self.dtype = dtype
-        self.preprocessors = [ImgPreprocessor(X_imgpath=img,
+        self.preprocessors = [Processor(X_imgpath=img,
                                              y_dirpath=y_dirpath,
                                              border=border, rnd=rnd)
                              for img in glob.glob(X_dirpath)[:limit]]
@@ -92,7 +92,7 @@ class BatchImgProcessor(object):
         return np.asarray(X, dtype=self.dtype).reshape(self.batchsize, l), \
                np.asarray(Y, dtype=self.dtype).reshape(self.batchsize, 1)
 
-class ImgPreprocessor(object):
+class Processor(object):
 
     def __init__(self, X_imgpath=None, y_dirpath=None, border=3, rnd=None):
         assert X_imgpath != None and isinstance(X_imgpath, str)
