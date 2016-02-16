@@ -11,6 +11,7 @@ package for compatibility.
 # standard libraries
 import os, sys, json
 import re
+import pdb
 import numpy as np
 from collections import OrderedDict
 
@@ -33,7 +34,7 @@ class MetricReader(object):
     def get_records(self, job_id=None, typ='train', experiment_name=None):
         collection = self.metrics
         if experiment_name:
-            collection = self.db.db[experiment_name]['metrics']
+            collection = self.db[experiment_name]['metrics']
         type = re.compile(r'^%s' % typ, re.I)
         cursor = collection.find({'job_id' : job_id,
                                     'type' : { '$regex' : type}})
@@ -51,7 +52,7 @@ class MetricReader(object):
     def get_job_metadata(self, job_id=None, experiment_name=None):
         collection = self.trainings
         if experiment_name:
-            collection = self.db.db[experiment_name]['trainings']
+            collection = self.db[experiment_name]['trainings']
         cursor = collection.find({'job_id' : job_id})
         return pd.DataFrame(list(cursor))
 
@@ -176,11 +177,11 @@ class MetricReader(object):
             seconds_epoche = int(df[df['iteration']==epochs[0]]['second'].values[0])
         else: seconds_epoche = 0
         zeit = '%ds / Epoche' % seconds_epoche
-        m = self.get_job_metadata(job_id=job_id)
         d = {}
         for col in m.columns: d[col] = m[col].values[0]
         if 'random_mode' in d:
-          d['training_data'] = '%d : %s' % (d['training_data'], d['random_mode'])
+          d['training_data'] = '%d : %s' % (d['training_data'],
+                                            d['random_mode'])
         if 'eta_min' in d:
             d['eta'] = '%.03f -> %.03f' % (d['eta'], + d['eta_min'])
         tb = axs[1].table(cellText=[[d['algorithm']], [d['eta']],
@@ -207,10 +208,9 @@ class MetricReader(object):
         experiment_name = self.options['experiment-name']
         connection = MongoClient(db_address)
         db = connection[db_name]
-        metrics = db.db[experiment_name]['metrics']
-        meta = db.db['meta']
-        trainings = db.db[experiment_name]['trainings']
-        # trainings = db.db['trainings']
+        metrics = db[experiment_name]['metrics']
+        meta = db['meta']
+        trainings = db[experiment_name]['trainings']
         return connection, db, metrics, meta, trainings
 
 class MetricRecorder(object):
@@ -231,7 +231,6 @@ class MetricRecorder(object):
           return max(self.trainings.distinct('job_id')) + 1
         else:
           return 1
-
 
     def start(self):
         self.starttime = timer()
@@ -299,13 +298,13 @@ class MetricRecorder(object):
         experiment_name = self.options['experiment-name']
         connection = MongoClient(db_address)
         db = connection[db_name]
-        metrics = db.db[experiment_name]['metrics']
-        meta = db.db['meta']
-        trainings = db.db[experiment_name]['trainings']
+        metrics = db[experiment_name]['metrics']
+        meta = db['meta']
+        trainings = db[experiment_name]['trainings']
         return connection, db, metrics, meta, trainings
 
 def get_options(dir_path):
-    # Read in the config file
+    # Reads the config file
     expt_dir  = os.path.realpath(os.path.expanduser(dir_path))
     expt_file = ''
     if not os.path.isdir(expt_dir) and not os.path.isfile(expt_dir):

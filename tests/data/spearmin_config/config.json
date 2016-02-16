@@ -1,12 +1,12 @@
 {
-    "language"        : "PYTHON",
+    "language" : "PYTHON",
     "database" : {
-	"name" : "s0545881",
-	"address": "mongodb://s0545881:KNlZmiaNU@hadoop03.f4.htw-berlin.de:27020/s0545881"
+	      "name" : "s0545881",
+	      "address": "mongodb://localhost:27017"
     },
-    "main-file"       : "train.py",
+    "main-file" : "train.py",
     "experiment-name" : "test-experiment",
-    "likelihood"      : "NOISELESS",
+    "likelihood" : "NOISELESS",
     "variables" : {
         "border" : {
             "type" : "INT",
