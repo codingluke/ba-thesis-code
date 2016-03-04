@@ -267,7 +267,7 @@ class Network():
         # symbolic gradients, and updates
         l2_norm_squared = sum([(layer.w**2).sum() for layer in self.layers])
         cost = self.layers[-1].cost(self)+\
-               0.5*lmbda*l2_norm_squared/n_train_batches
+               0.5*lmbda*l2_norm_squared/tota_n_train_batches
         grads = T.grad(cost=cost, wrt=self.params)
 
         # define update rules
@@ -298,8 +298,10 @@ class Network():
         best_valid_acc = 1.0
         done_looping = False # for early stopping
         val_per_epochs = tdata.size() / mbs
-        validation_frequency = int(val_per_epochs/ validation_frequency)
-        patience = validation_frequency * 4
+        if validation_frequency:
+            validation_frequency = int(val_per_epochs/ validation_frequency)
+            patience = validation_frequency * 4
+        else: patience = 0
 
         # calc linear eta decrease
         if not eta_min: eta_min = eta
@@ -322,7 +324,8 @@ class Network():
                     cost += train_mb(minibatch_index, eta)
 
                     # Validation
-                    if iteration % validation_frequency == 0:
+                    if validation_frequency and \
+                       iteration % validation_frequency == 0:
                         valid_accs = []
                         # Go through the validation data, and get the acc
                         for valid_x, valid_y in vdata:
@@ -332,6 +335,7 @@ class Network():
                             valid_accs.append([validate_mb_accuracy(j)
                                 for j in xrange(n_valid_batches)])
                         valid_acc = np.mean(valid_accs) # mean over valid_acc
+                        train_cost = cost / iteration # mean over cost
 
                         # record when metric_recorder is available
                         if metric_recorder:
@@ -479,7 +483,7 @@ class AutoencoderLayer(Layer):
         """reconstructs the input to the output layer"""
         return sigmoid(T.dot(hidden, self.w_prime) + self.b_prime)
 
-    def get_cost_updates(self, eta=None):
+    def get_cost_updates(self, eta=None, level=0):
         """Returns costs and updates rules for training with the rmsprop
         algorithm"""
         y = self.get_hidden_values(self.get_corrupted_input())
@@ -520,7 +524,7 @@ class AutoencoderLayer(Layer):
         x = T.matrix("x") # Inputdata
 
         self.set_inpt(x, x, mbs)
-        cost, updates = self.get_cost_updates(eta=eta)
+        cost, updates = self.get_cost_updates(eta=eta, level=level)
 
         # Prepare Theano shared variables with the shape and type of
         # The train, valid batches.

@@ -14,7 +14,7 @@ from metric import MetricRecorder
 
 rnd = np.random.RandomState()
 
-mr = MetricRecorder(config_dir_path='./simple.json')
+mr = MetricRecorder(config_dir_path='./sae.json')
 C = {
     'X_dirpath' : '../../../data/train_all/*',
     'X_valid_dirpath' : '../../../data/train_all/*',
@@ -22,7 +22,7 @@ C = {
     'y_dirpath' : '../../../data/train_cleaned/',
     'batchsize' : 1000000,
     'limit' : None,
-    'epochs' : 4,
+    'epochs' : 15,
     'patience' : 70000,
     'patience_increase' : 2,
     'improvement_threshold' : 0.995,
@@ -39,6 +39,7 @@ C = {
     'corruption_level' : 0.14,
     'border' : 2,
     'hidden_1' : 199,
+    'hidden_2' : 81,
     'mini_batch_size': 500
 }
 
@@ -58,7 +59,7 @@ validation_data = BatchProcessor(
 pretrain_data = BatchProcessor(
     X_dirpath=C['X_pretrain_dirpath'],
     y_dirpath=C['y_dirpath'],
-    batchsize=50000, border=C['border'], limit=None,
+    batchsize=500000, border=C['border'], limit=None,
     random=True, random_mode='fully', rnd=rnd,
     dtype=theano.config.floatX)
 
@@ -80,8 +81,10 @@ print "job_id: %d" % mr.job_id
 n_in = (2*C['border']+1)**2
 net = Network([
     AutoencoderLayer(n_in=n_in, n_hidden=C['hidden_1'], rnd=rnd,
-      corruption_level=C['corruption_level'], p_dropout=C['dropout']),
-    FullyConnectedLayer(n_in=C['hidden_1'], n_out=1, rnd=rnd)],
+      corruption_level=C['corruption_level']),
+    AutoencoderLayer(n_in=C['hidden_1'], n_hidden=C['hidden_2'], rnd=rnd,
+      corruption_level=C['corruption_level']),
+    FullyConnectedLayer(n_in=C['hidden_2'], n_out=1, rnd=rnd)],
     C['mini_batch_size'])
 
 print '...start pretraining'

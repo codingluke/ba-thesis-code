@@ -23,16 +23,16 @@ mr.start()
 border = 2
 
 training_data = BatchProcessor(
-    X_dirpath='../../../data/onetext_train_small/*',
+    X_dirpath='../../../data/train_all/*',
     y_dirpath='../../../data/train_cleaned/',
-    batchsize=2000000, border=border, limit=None,
+    batchsize=1000000, border=border, limit=None,
     random=True, random_mode='fully',
     dtype=theano.config.floatX, rnd=rnd)
 
 validation_data = BatchProcessor(
-    X_dirpath='../../../data/onetext_valid_small/*',
+    X_dirpath='../../../data/train_all/*',
     y_dirpath='../../../data/train_cleaned/',
-    batchsize=2000000, border=border, limit=None,
+    batchsize=1000000, border=border, limit=None,
     random=False, rnd=rnd,
     dtype=theano.config.floatX)
 
@@ -43,16 +43,16 @@ print "Save Dir: " + save_dir
 start = timer()
 mbs = 500
 net = Network([
-        FullyConnectedLayer(n_in=(2*border+1)**2, n_out=80, rnd=rnd),
-        FullyConnectedLayer(n_in=80, n_out=1, rnd=rnd)
+        FullyConnectedLayer(n_in=(2*border+1)**2, n_out=200, rnd=rnd),
+        FullyConnectedLayer(n_in=200, n_out=1, rnd=rnd)
     ], mbs)
 
 print '...start training'
-cost = net.train(tdata=training_data, epochs=4,
+cost = net.train(tdata=training_data, epochs=15,
         mbs=mbs, eta=0.1, eta_min=0.01,
         vdata=validation_data, lmbda=0.0,
         momentum=0.95, patience_increase=2,
-        improvement_threshold=0.995, validation_frequency=3,
+        improvement_threshold=0.995, validation_frequency=1,
         save_dir=save_dir, metric_recorder=mr,
         algorithm='rmsprop', early_stoping=False)
 print "Zeit : %d" % mr.stop()

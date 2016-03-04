@@ -14,21 +14,21 @@ from metric import MetricRecorder
 
 rnd = np.random.RandomState()
 
-mr = MetricRecorder(config_dir_path='./simple.json')
+mr = MetricRecorder(config_dir_path='./sae.json')
 C = {
-    'X_dirpath' : '../../../data/train_all/*',
-    'X_valid_dirpath' : '../../../data/train_all/*',
-    'X_pretrain_dirpath' : '../../../data/pretrain/*',
+    'X_dirpath' : '../../../data/onetext_train/*',
+    'X_valid_dirpath' : '../../../data/onetext_valid/*',
+    'X_pretrain_dirpath' : '../../../data/onetext_pretrain/*',
     'y_dirpath' : '../../../data/train_cleaned/',
     'batchsize' : 1000000,
     'limit' : None,
-    'epochs' : 4,
+    'epochs' : 15,
     'patience' : 70000,
     'patience_increase' : 2,
     'improvement_threshold' : 0.995,
     'validation_frequency' : 1,
     'lmbda' : 0.0,
-    'dropout' : 0.0,
+    'dropout' : 0.001,
     'training_size' : None,
     'validation_size' : None,
     'pretrain_size' : None,
@@ -39,6 +39,8 @@ C = {
     'corruption_level' : 0.14,
     'border' : 2,
     'hidden_1' : 199,
+    'hidden_2' : 81,
+    'hidden_3' : 70,
     'mini_batch_size': 500
 }
 
@@ -58,7 +60,7 @@ validation_data = BatchProcessor(
 pretrain_data = BatchProcessor(
     X_dirpath=C['X_pretrain_dirpath'],
     y_dirpath=C['y_dirpath'],
-    batchsize=50000, border=C['border'], limit=None,
+    batchsize=500000, border=C['border'], limit=None,
     random=True, random_mode='fully', rnd=rnd,
     dtype=theano.config.floatX)
 
@@ -75,20 +77,22 @@ mr.start()
 save_dir = "./models/%s_%d_" % (mr.experiment_name, mr.job_id)
 pretrain_save_dir = save_dir + "pretrain_"
 
-print "job_id: %d" % mr.job_id
-
 n_in = (2*C['border']+1)**2
 net = Network([
     AutoencoderLayer(n_in=n_in, n_hidden=C['hidden_1'], rnd=rnd,
+      corruption_level=C['corruption_level']),
+    AutoencoderLayer(n_in=C['hidden_1'], n_hidden=C['hidden_2'], rnd=rnd,
       corruption_level=C['corruption_level'], p_dropout=C['dropout']),
-    FullyConnectedLayer(n_in=C['hidden_1'], n_out=1, rnd=rnd)],
+    AutoencoderLayer(n_in=C['hidden_2'], n_hidden=C['hidden_3'], rnd=rnd,
+      corruption_level=C['corruption_level']),
+    FullyConnectedLayer(n_in=C['hidden_3'], n_out=1, rnd=rnd)],
     C['mini_batch_size'])
 
 print '...start pretraining'
-#net.pretrain_autoencoders(tdata=pretrain_data,
-#                          mbs=C['mini_batch_size'], eta=C['eta_pre'], 
-#                          epochs=10, metric_recorder=mr, 
-#                          save_dir=pretrain_save_dir)
+net.pretrain_autoencoders(tdata=pretrain_data,
+                          mbs=C['mini_batch_size'], eta=C['eta_pre'], 
+                          epochs=10, metric_recorder=mr, 
+                          save_dir=pretrain_save_dir)
 
 print '...start training'
 result = net.train(tdata=training_data, epochs=C['epochs'],

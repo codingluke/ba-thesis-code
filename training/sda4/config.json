@@ -1,0 +1,37 @@
+{
+    "language"        : "PYTHON",
+    "database" : {
+	"name" : "s0545881",
+	"address": "mongodb://s0545881:KNlZmiaNU@hadoop03.f4.htw-berlin.de:27020/s0545881"
+    },
+    "main-file"       : "train.py",
+    "experiment-name" : "sda4",
+    "likelihood"      : "NOISELESS",
+    "variables" : {
+        "hidden_1" : {
+            "type" : "INT",
+            "size" : 1,
+            "min"  : 150,
+            "max"  : 200
+        },
+        "hidden_2" : {
+            "type" : "INT",
+            "size" : 1,
+            "min"  : 110,
+            "max"  : 150 
+        },
+        "hidden_3" : {
+            "type" : "INT",
+            "size" : 1,
+            "min"  : 80,
+            "max"  : 110
+        },
+        "hidden_4" : {
+            "type" : "INT",
+            "size" : 1,
+            "min"  : 10,
+            "max"  : 80
+        }
+    }
+}
+

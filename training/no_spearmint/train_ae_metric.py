@@ -27,8 +27,8 @@ n_in = (2*border+1)**2
 mbs = 500
 
 pretrain_data = BatchProcessor(
-    X_dirpath='../../../data/onetext_pretrain_small/*',
-    y_dirpath='../../../data/onetext_pretrain_small/',
+    X_dirpath='../../../data/onetext_pretrain/*',
+    y_dirpath='../../../data/onetext_pretrain/',
     batchsize=500000,
     border=border,
     limit=None,
@@ -64,8 +64,6 @@ mr.start()
 net = Network([
         AutoencoderLayer(n_in=n_in, n_hidden=190, corruption_level=0.14,
           rnd=rnd),
-        AutoencoderLayer(n_in=190, n_hidden=81, corruption_level=0.14,
-          rnd=rnd),
         FullyConnectedLayer(n_in=81, n_out=1, rnd=rnd),
     ], mbs)
 
@@ -79,11 +77,11 @@ save_dir = "./models/%s_%d_" % (mr.experiment_name, mr.job_id)
 print "Savedir : " + save_dir
 
 print '...start pretraining'
-#net.pretrain_autoencoders(
-#    tdata=pretrain_data,
-#    mbs=mbs,
-#    eta=0.03, epochs=15,
-#    metric_recorder=mr, save_dir=save_dir)
+net.pretrain_autoencoders(
+    tdata=pretrain_data,
+    mbs=mbs,
+    eta=0.025, epochs=10,
+    metric_recorder=mr, save_dir=save_dir)
 
 training_data.reset()
 print '...start training'
@@ -91,7 +89,7 @@ net.train(tdata=training_data, epochs=15,
         mbs=mbs, eta=0.045, eta_min=0.01,
         vdata=validation_data, lmbda=0.0,
         momentum=0.0, patience_increase=2,
-        improvement_threshold=0.995, validation_frequency=1,
+        improvement_threshold=0.995, validation_frequency=2,
         save_dir=save_dir, metric_recorder=mr, algorithm='rmsprop')
 
 print "Zeit : %d" % mr.stop()
