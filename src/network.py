@@ -76,10 +76,10 @@ class Network():
         self.x = T.matrix("x", dtype=theano.config.floatX)
         self.y = T.matrix("y", dtype=theano.config.floatX)
         init_layer = self.layers[0]
-        init_layer.set_inpt(self.x, self.x, self.mbs)
+        init_layer.set_input(self.x, self.x, self.mbs)
         for j in xrange(1, len(self.layers)):
             prev_layer, layer  = self.layers[j-1], self.layers[j]
-            layer.set_inpt(prev_layer.output, prev_layer.output_dropout,
+            layer.set_input(prev_layer.output, prev_layer.output_dropout,
                            self.mbs)
         self.output = self.layers[-1].output
         self.output_dropout = self.layers[-1].output_dropout
@@ -383,7 +383,7 @@ class Network():
 class Layer():
     """ 'Base' Class for layers """
 
-    def set_inpt(self, inpt, inpt_dropout, mbs):
+    def set_input(self, inpt, inpt_dropout, mbs):
         """Method to set the input variable to connect the layers."""
         return NotImplemented
 
@@ -429,7 +429,7 @@ class AutoencoderLayer(Layer):
         self._params = [self.w, self.b, self.b_prime]
         self.params = [self.w, self.b]
 
-    def set_inpt(self, inpt, inpt_dropout, mbs):
+    def set_input(self, inpt, inpt_dropout, mbs):
         """Method to set the input variable to connect the layers."""
 
         self.inpt = inpt.reshape((mbs, self.n_in))
@@ -523,8 +523,8 @@ class AutoencoderLayer(Layer):
         index = T.lscalar() # Minibatch index
         x = T.matrix("x") # Inputdata
 
-        self.set_inpt(x, x, mbs)
-        cost, updates = self.get_cost_updates(eta=eta, level=level)
+        self.set_input(x, x, mbs)
+        cost, updates = self.get_cost_updates(eta=eta)
 
         # Prepare Theano shared variables with the shape and type of
         # The train, valid batches.
@@ -540,9 +540,7 @@ class AutoencoderLayer(Layer):
             [index],
             cost,
             updates=updates,
-            givens={
-                x: training_x[index * mbs: (index + 1) * mbs]
-            }
+            givens={ x: training_x[index * mbs: (index + 1) * mbs] }
         )
 
         for epoch in xrange(epochs):
@@ -605,7 +603,7 @@ class FullyConnectedLayer():
                          'b')
         self.params = [self.w, self.b]
 
-    def set_inpt(self, inpt, inpt_dropout, mbs):
+    def set_input(self, inpt, inpt_dropout, mbs):
         """Method to set the input variable to connect the layers."""
         self.inpt = inpt.reshape((mbs, self.n_in))
         self.output = self.activation_fn(
@@ -615,7 +613,6 @@ class FullyConnectedLayer():
             rnd=self.rnd)
         self.output_dropout = self.activation_fn(
             T.dot(self.inpt_dropout, self.w) + self.b)
-        self.y_out = T.argmax(self.output, axis=1)
 
     def accuracy(self, y):
         """Return the accuracy for the mini-batch as RMSE"""
